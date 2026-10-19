@@ -1,0 +1,26 @@
+# Files git should NOT save or upload to GitHub.
+
+# Downloaded packages (npm puts them here; anyone can re-download them
+# with "npm install", so they don't belong in the repository)
+node_modules/
+
+# The finished website that "npm run build" makes (it's rebuilt from
+# the source code, and published to GitHub Pages separately)
+dist/
+
+# Secret settings for your own computer only (like API keys)
+.env
+.env.local
+.env.*.local
+
+# Log files made when something goes wrong
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Files the operating system and code editors create on their own
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
