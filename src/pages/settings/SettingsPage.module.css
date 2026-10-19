@@ -1,0 +1,199 @@
+/* =====================================================================
+   SETTINGS PAGE
+   ===================================================================== */
+
+/* The page: centered, no wider than 640px, with 16px of room at each side */
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+}
+
+/* "Settings", and the line under it saying where they're saved */
+.pageTitle {
+  margin: 12px 0 6px;
+  font-size: 1.6rem;
+}
+.savedWhere {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Whether the last change was saved ("✓ Saved to Google Drive"), red if
+   it couldn't be. It keeps its height when empty, so nothing jumps. */
+.status {
+  min-height: 1.4em;
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: #3f9b5b;
+}
+.status.error { color: var(--error); }
+
+/* One section: a box in the page's surface color with a heading */
+.section {
+  margin-top: 16px;
+  padding: 6px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+/* The section's heading ("APPEARANCE"): small capitals in the accent color */
+.sectionTitle {
+  margin: 12px 0 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* One setting: its name and explanation on the left, its control on the
+   right, with a thin line between settings */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+}
+.row + .row { border-top: 1px solid var(--border); }
+
+/* The name (bold) and the explanation under it (softer and smaller) */
+.rowText { min-width: 0; }
+.rowName {
+  font-weight: 700;
+  cursor: pointer;
+}
+.rowDescription {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* The control never shrinks */
+.rowControl { flex-shrink: 0; }
+
+/*
+  The theme choice: Dark, System and Light side by side as one rounded
+  bar. Each is a radio button hidden over its label (so it still works
+  with the keyboard and screen readers); the label shows the icon and
+  name. The chosen one is filled with the accent color.
+*/
+.segments {
+  display: flex;
+  padding: 3px;
+  background: var(--switch-track);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.segment {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.segment svg { width: 15px; height: 15px; flex-shrink: 0; }
+.segment:hover { color: var(--text); }
+
+/* The radio button itself: invisible, laid over the whole choice */
+.segment input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* The chosen one: accent-colored, with white text */
+.segment:has(input:checked) {
+  color: #ffffff;
+  background: var(--accent);
+}
+
+/* Reached with the keyboard: an outline around that choice */
+.segment:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* On narrow phones, the bar goes under the setting's name, rather than
+   squeezing it */
+@media (max-width: 520px) {
+  .row:has(.segments) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* A setting with its control underneath: everything in one column,
+   across the whole width. (Its name is a paragraph, which normally has
+   space above it: "margin: 0" removes that, to match the other rows.) */
+.blockBody { width: 100%; }
+.blockBody .rowName {
+  margin: 0;
+  cursor: default;
+}
+
+/* A grid of checkboxes: as many columns as fit, each at least 170px wide
+   ("auto-fill" makes as many as fit; "minmax" sets their size) */
+.checkGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 4px 16px;
+  margin-top: 12px;
+}
+
+/* One checkbox and its name. The whole line can be clicked (it's a
+   label), and lights up under the mouse. "accent-color" colors the
+   ticked box in the site's accent color. */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  font-size: 0.92rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.check:hover { background: var(--surface-hover); }
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* "Show all" and "Hide all", side by side under the checkboxes */
+.checkButtons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* A small rounded button */
+.smallButton {
+  padding: 5px 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.smallButton:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}

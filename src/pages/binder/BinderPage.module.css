@@ -1,0 +1,728 @@
+/* =====================================================================
+   ONE BINDER: ITS PAGES OF POCKETS (the same look as the original site)
+   ===================================================================== */
+
+/* =====================================================================
+   SIZING THE BINDER TO THE WINDOW
+   The binder grows and shrinks with the browser window, filling the
+   height left over once everything above and below it has its space, so
+   the whole page fits in the window with no scrolling.
+   These "custom properties" (variables, written --name) do the math:
+   - --top-gap: the space above the binder: the top bar (60px) + this
+     page's 8px top padding + the binder's 20px top margin = 88px.
+   - --bottom-space: everything below the binder: 16px gap + 33px
+     Previous / Next row + 12px bottom padding + 43px footer + 2px spare
+     (screens zoomed to 125% round sizes to fractions of a pixel) = 106px.
+   - --binder-height: the window's height minus those (never below 380px,
+     so a very short window still shows a usable binder). "svh" ignores a
+     phone's sliding address bar.
+   - --binder-chrome: the parts of the binder's height that AREN'T
+     pockets: cover padding 14px x 2 + border 1px x 2 + page padding 8px
+     x 2 + 3 seams of 6px between the 4 rows = 64px.
+   - --pocket-height: what's left for the 4 rows, split 4 ways, and
+     --pocket-width: pockets are card-shaped (63 wide for every 88 tall).
+   - --binder-width: whatever fits 8 pockets across (4 per page) + 6 seams
+     of 6px + 4 page paddings of 8px + the 28px spine + 2 cover paddings
+     of 14px + 2px of border = 8 pockets + 126px. "min(100%, ...)" stops
+     it getting wider than the window.
+   If you change any of those sizes, update these numbers too.
+   ===================================================================== */
+.page {
+  --top-gap: 88px;
+  --bottom-space: 106px;
+  --binder-height: max(380px, calc(100svh - var(--top-gap) - var(--bottom-space)));
+  --binder-chrome: 64px;
+  --pocket-height: calc((var(--binder-height) - var(--binder-chrome)) / 4);
+  --pocket-width: calc(var(--pocket-height) * 63 / 88);
+  --binder-width: min(100%, calc(8 * var(--pocket-width) + 126px));
+  padding: 8px 16px 12px;
+  /* On a phone, a turning page swings out past the screen's edge: "clip"
+     cuts it off there instead of letting the page scroll sideways */
+  overflow-x: clip;
+}
+
+/* =====================================================================
+   THE BINDER
+   ===================================================================== */
+
+/*
+  The open binder: the black cover with the two pages lying on it. A grid
+  with two equal columns (left page, right page). "touch-action: pan-y"
+  lets the phone scroll up and down as usual, but passes sideways swipes
+  to the page so it can turn the page. "perspective" gives 3D depth to a
+  turning page (smaller numbers = more dramatic 3D).
+*/
+.binder {
+  width: var(--binder-width);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;                     /* the space for the spine in the middle */
+  position: relative;
+  margin: 20px auto 0;
+  padding: 14px;
+  border: 1px solid var(--binder-cover-edge);
+  border-radius: 12px;
+  background: var(--binder-cover);
+  box-shadow: var(--binder-shadow);
+  touch-action: pan-y;
+  perspective: 2200px;
+  /* Dragging shouldn't highlight (select) text or pictures in the binder */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The spine: a dark groove down the middle where the binder folds. The
+   gradient goes dark → darker → dark, like a fold in the cover. */
+.binder::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 28px;
+  transform: translateX(-50%);
+  background: linear-gradient(to right,
+    rgba(255, 255, 255, 0.03),
+    rgba(0, 0, 0, 0.55) 50%,
+    rgba(255, 255, 255, 0.03));
+}
+
+/* One page of pockets: 4 columns by 4 rows (16 pockets). The small gaps
+   are the plastic seams between pockets. */
+.binderPage {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--binder-page);
+}
+
+/*
+  One pocket, in the real Magic card shape (63 x 88 mm) so a card picture
+  fits it exactly. The inset shadow makes an empty pocket look sunk in,
+  like an empty sleeve; the thin light border is the edge of the plastic.
+  "container-type" lets things inside size themselves by the pocket's
+  width (the "cqw" unit below), so the "+" grows with the binder.
+*/
+.pocket {
+  position: relative;
+  aspect-ratio: 63 / 88;
+  border: 1px solid var(--pocket-edge);
+  border-radius: 4px;
+  background: var(--pocket-fill);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+/* A soft diagonal shine across each pocket, like clear plastic catching
+   the light (on top of the card picture too, like a real sleeve).
+   pointer-events: none lets clicks pass through to the link. */
+.pocket::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    var(--pocket-shine) 0%, transparent 40%, transparent 70%, var(--pocket-shine) 100%);
+  pointer-events: none;
+}
+
+/* The white "+" in an empty pocket: a link that fills the whole pocket,
+   with the "+" in the middle. It's 35% of the pocket's width ("cqw"),
+   but never smaller than 1.25rem or bigger than 4rem. Thin normally... */
+.pocketAdd {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.25rem, 35cqw, 4rem);
+  font-weight: 300;
+  line-height: 1;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+/* ...and bold and orange under the mouse (or reached by Tab). It's
+   centered, so getting bolder doesn't move anything. */
+.pocketAdd:hover,
+.pocketAdd:focus-visible {
+  font-weight: 800;
+  color: var(--accent-on-dark);
+}
+
+/* A pocket holding a card: the whole card picture is a link. On iPhones,
+   a long press normally pops up a link preview; a long press picks the
+   card up instead, so that's turned off. */
+.pocketCard {
+  position: absolute;
+  inset: 0;
+  -webkit-touch-callout: none;
+}
+
+/* The box around the picture (what's dragged), filling the pocket */
+.cardHolder {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The card picture fills its pocket */
+.cardHolder img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-drag: none;   /* no browser "drag the picture" (Safari) */
+}
+
+/* Keyboard focus outline for both kinds of pocket link */
+.pocketAdd:focus-visible,
+.pocketCard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/*
+  A FOIL card: a rainbow border around the card, drawn by a layer on top
+  of the card's edge ("::before"), so the card doesn't shrink or move.
+  The layer is filled with a rainbow, then a "mask" cuts out everything
+  except a 3px frame ("padding: 3px" is the frame's width; "exclude"
+  removes the inner part from the whole). z-index 1 puts it over the
+  picture; the "− 3 +" bar comes later in the page, so it stays on top.
+*/
+.pocket.foil::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    #ff4d6d, #ff9f43, #ffe156, #4cd97b, #3ec5ff, #6c7bff, #c06cff, #ff4d6d);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/*
+  The "− 3 +" bar along the bottom of a card: a dark see-through pill over
+  the bottom edge (where the artist's name is, so it hides nothing
+  important). Its size follows the pocket's width ("cqw"), so it shrinks
+  on phones and grows on big screens.
+*/
+.copiesBar {
+  position: absolute;
+  z-index: 1;
+  left: 8%;
+  right: 8%;
+  bottom: 3%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: clamp(0.65rem, 11cqw, 1.05rem);
+  line-height: 1;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  -webkit-touch-callout: none;
+}
+
+/* The "−" and "+" buttons: round, see-through until the mouse is over them */
+.copiesBar button {
+  display: grid;
+  place-items: center;
+  width: 1.9em;
+  height: 1.9em;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  touch-action: manipulation;   /* no double-tap zoom when tapping quickly */
+}
+
+/* Under the mouse: orange and bold (a thin outline in its own color, so
+   the sign doesn't change size), on a faint light circle */
+.copiesBar button:hover:not(:disabled),
+.copiesBar button:focus-visible {
+  color: var(--accent-on-dark);
+  -webkit-text-stroke: 0.06em currentColor;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+/* "+" is greyed out at the most copies allowed (99) */
+.copiesBar button:disabled { opacity: 0.35; cursor: default; }
+
+/* The number of copies between the buttons (every digit the same width) */
+.copiesCount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =====================================================================
+   DRAGGING CARDS
+   ===================================================================== */
+
+/* The pocket a card is being dragged OUT of: the card (and its bar) fades */
+.pocket.dragSource .pocketCard,
+.pocket.dragSource .copiesBar { opacity: 0.25; }
+
+/* The pocket the card would drop INTO: a dashed outline inside its edge
+   (a negative outline-offset draws it inside), plus a soft glow */
+.pocket.dropTarget {
+  outline: 2px dashed var(--accent);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* While carrying a card with the keyboard, the pocket it would drop into
+   shows only the dashed outline (not the keyboard's solid one on top) */
+.pocket.dropTarget > a:focus-visible { outline: none; }
+
+/* The floating copy of the card that follows the pointer: tilted a
+   little and slightly bigger, with a deep shadow */
+.ghost {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+  transform: rotate(3deg) scale(1.06);
+  transition: opacity 0.15s ease;   /* fades smoothly over a drop circle */
+}
+.ghost img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Over a drop circle: the floating card fades, so the circle shows */
+.ghost.overCircle { opacity: 0.3; }
+
+/* While dragging, show the "grabbing hand" cursor everywhere (the page
+   adds this class to <body> during a drag) */
+:global(body).dragging,
+:global(body).dragging * {
+  cursor: grabbing !important;
+}
+
+/*
+  The two drop circles on the binder while a card is being dragged, both
+  centered across the binder: the blue "move to another binder" circle
+  1/3 of the way down, and the red "remove card" circle 1/3 of the way up
+  from the bottom. "translate(-50%, -50%)" pulls each back by half its
+  size, so its CENTER sits on that spot. Hidden until a drag starts.
+*/
+.moveCircle,
+.trashCircle {
+  position: absolute;
+  left: 50%;
+  z-index: 5;
+  display: none;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  color: #ffffff;
+  border: 3px solid #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.moveCircle svg,
+.trashCircle svg { width: 30px; height: 30px; }
+.moveCircle  { top: 33.333%; background: #2b6cb0; }
+.trashCircle { top: 66.667%; background: #c0392b; }
+
+/* Show them only while a card is being dragged */
+:global(body).dragging .moveCircle,
+:global(body).dragging .trashCircle { display: grid; }
+
+/* A card is over one: grow it and brighten it */
+.moveCircle.active,
+.trashCircle.active { transform: translate(-50%, -50%) scale(1.25); }
+.trashCircle.active { background: #e74c3c; }
+.moveCircle.active  { background: #3b82d6; }
+
+/*
+  The glow on the binder's left or right edge while a card is held there,
+  showing that the page is about to turn. It pulses while it waits.
+*/
+.binder.edgeLeft::after,
+.binder.edgeRight::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 70px;
+  z-index: 4;
+  pointer-events: none;
+  animation: edge-pulse 0.8s ease-in-out infinite alternate;
+}
+.binder.edgeLeft::after {
+  left: 0;
+  border-radius: 12px 0 0 12px;
+  background: linear-gradient(to right, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
+}
+.binder.edgeRight::after {
+  right: 0;
+  border-radius: 0 12px 12px 0;
+  background: linear-gradient(to left, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
+}
+
+/* The pulse: the glow fades between half and full strength */
+@keyframes edge-pulse {
+  from { opacity: 0.5; }
+  to   { opacity: 1; }
+}
+
+/* A pocket waiting for Scryfall to say which card picture was dropped on
+   it: its dashed outline gently fades in and out until the card arrives */
+.pocket.dropLoading {
+  outline: 2px dashed var(--accent);
+  outline-offset: -3px;
+  animation: drop-loading-pulse 0.9s ease-in-out infinite alternate;
+}
+@keyframes drop-loading-pulse {
+  from { outline-color: var(--accent); }
+  to   { outline-color: transparent; }
+}
+
+/* People who turn on "reduce motion" get a steady glow and outline */
+@media (prefers-reduced-motion: reduce) {
+  .binder.edgeLeft::after,
+  .binder.edgeRight::after,
+  .pocket.dropLoading { animation: none; }
+}
+
+/* =====================================================================
+   PAGE TURNING ANIMATION (see lib/pageTurn.ts)
+   ===================================================================== */
+
+/* The temporary turning page, laid over the binder. "preserve-3d" keeps
+   its two sides in real 3D. It's just for show: it can't be clicked. */
+.flipper {
+  position: absolute;
+  z-index: 3;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+/* The two sides of the turning page. Only one shows at a time; as a
+   backup, "backface-visibility: hidden" hides a side facing away. */
+.flipFace {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;   /* same thing, for Safari */
+}
+
+/* The back side starts already turned around, facing away */
+.flipBack { transform: rotateY(180deg); }
+
+/* (The front needs no extra rules: it starts facing you) */
+.flipFront { transform: none; }
+
+/* The copied page inside each side fills it completely */
+.flipFace > .binderPage { height: 100%; }
+
+/* The plain back of a page (on phones, where only one page shows) */
+.blankPage {
+  height: 100%;
+  border-radius: 6px;
+  background: var(--binder-page);
+}
+
+/* The shadow a turning page casts on the binder underneath it: above the
+   pages (z-index 2) but under the turning page (z-index 3) */
+.turnShadow {
+  position: absolute;
+  z-index: 2;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+/* A dark layer over each side, faded in and out while the page turns, so
+   it looks shadowed as it lifts off the binder */
+.flipShade {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: #000000;
+  opacity: 0;
+}
+
+/* =====================================================================
+   PREVIOUS / NEXT PAGE
+   ===================================================================== */
+
+/* The row under the binder, exactly as wide as the binder, so the "←" of
+   Previous lines up with its left edge and the "→" of Next its right */
+.pageNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: var(--binder-width);
+  margin: 16px auto 0;
+}
+
+/* Previous / Next: real buttons styled as text links, with no side
+   padding so the arrows sit right at the binder's edges */
+.pageLink {
+  padding: 6px 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* Under the mouse it looks bold: a thin outline in its own color, which
+   doesn't get wider, so nothing moves */
+.pageLink:hover:not(:disabled) { -webkit-text-stroke: 0.04em currentColor; }
+
+/* At the first or last page there's nowhere to go: greyed out */
+.pageLink:disabled {
+  color: var(--muted);
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* "Pages 1–2 of 10" in the middle */
+.pageStatus {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* The short labels ("Previous", "Next") only show on phones */
+.labelShort { display: none; }
+
+/* =====================================================================
+   THE TOP BAR'S MIDDLE: THE SAVE STATUS
+   ===================================================================== */
+
+/* "✓ Saved to Drive", "Saving…": muted grey, green once saved, red for a
+   problem ("data-state" picks the color). Nothing to say: no space. */
+.syncStatus {
+  align-self: center;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.syncStatus[data-state="saved"] { color: #3f9b5b; }
+.syncStatus[data-state="error"] { color: #d0453a; }
+.syncStatus:empty { display: none; }
+
+/* "Connect Drive": a button styled as a link, with a small cloud icon */
+.toolLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.toolLink svg { width: 16px; height: 16px; flex-shrink: 0; }
+.toolLink:hover { -webkit-text-stroke: 0.04em currentColor; }
+
+/* =====================================================================
+   THE KEY GUIDE
+   A small dark pill pinned to the top middle of the window, just under
+   the top bar, listing the keys that work right now. It only shows while
+   the keyboard is in the binder. "pointer-events: none" lets clicks pass
+   through it, and "nowrap" + "ellipsis" keep it to one line.
+   ===================================================================== */
+.keyboardHint {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100vw - 32px);
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  color: #f4efe7;
+  background: rgba(20, 21, 26, 0.92);
+  border: 1px solid var(--accent-on-dark);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* =====================================================================
+   THE "MOVE CARD TO…" AND "REMOVE CARD?" WINDOWS
+   (the window itself, title and buttons look like the other pop-ups:
+   see components/binders/BinderWindows.module.css)
+   ===================================================================== */
+
+/* The line under a window's title */
+.dialogText {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* "HOW MANY TO MOVE": the small heading above the number box */
+.fieldLabel {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* "How many to move" (only when the pocket has several copies): a small
+   number box with "of 4" beside it */
+.moveHowMany { margin-bottom: 14px; }
+.moveAmountRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.moveAmount {
+  width: 5.5em;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.moveAmount:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.moveAmountNote { font-size: 0.9rem; color: var(--muted); }
+
+/* The list of the other binders, one button per line */
+.moveTargets {
+  display: grid;
+  gap: 6px;
+}
+
+/* One binder to pick: its symbol, name, and card count on the right, in
+   a light box that highlights in the accent color under the mouse */
+.moveTarget {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.moveTarget:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+
+/* A full binder (or while a move is being saved): greyed out */
+.moveTarget:disabled { opacity: 0.5; cursor: default; }
+
+/* The binder's cover symbol (an empty spot the same size if it has none) */
+.moveSymbol {
+  display: block;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+}
+
+/* The name takes the space in the middle; the count sits right */
+.moveName { flex: 1; font-weight: 600; }
+.moveCount { font-size: 0.85rem; color: var(--muted); }
+
+/* "You don't have any other binders yet." */
+.moveNone {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* "Or move it to a new binder": the name box and the "New binder & move"
+   button side by side, lined up along the bottom ("flex-wrap" puts the
+   button under the box on a narrow phone) */
+.moveNew { margin-top: 4px; }
+.moveNewRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+.moveNameField { flex: 1 1 180px; }
+.moveNewButton { margin-bottom: 16px; }
+
+/* "Moving…", or a problem like "That binder is full" (in red) */
+.moveMessage {
+  min-height: 1.3em;
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.moveMessage.error { color: var(--error); }
+
+/* The Cancel button along the bottom, on the right */
+.moveButtons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+/* =====================================================================
+   PHONES (640px or less)
+   Two pages side by side would be tiny, so the binder shows ONE page at
+   a time and the spine is hidden. The size math changes to match: 4
+   pockets across, and the cover padding is 10px instead of 14px:
+   - not-pocket height = 20px padding + 2px border + 16px page padding
+     + 18px of seams = 56px
+   - width = 4 pockets + 18px seams + 16px page padding + 20px padding
+     + 2px border = 4 pockets + 56px
+   The top bar has a second row on phones (the save status), which makes
+   it 86px tall, so --top-gap is 114px. Very small phones also allow a
+   shorter binder (300px), so it still fits without scrolling.
+   Keep this 640px number the same as PHONE_QUERY in BinderPage.tsx.
+   ===================================================================== */
+@media (max-width: 640px) {
+  .page {
+    --top-gap: 114px;
+    --binder-height: max(300px, calc(100svh - var(--top-gap) - var(--bottom-space)));
+    --binder-chrome: 56px;
+    --binder-width: min(100%, calc(4 * var(--pocket-width) + 56px));
+  }
+  .binder {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+  .binder::before { display: none; }
+  .labelLong { display: none; }
+  .labelShort { display: inline; }
+}

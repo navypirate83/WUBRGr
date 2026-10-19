@@ -1,0 +1,122 @@
+/* =====================================================================
+   A CLOSED BINDER (the same look as the original site)
+   ===================================================================== */
+
+/*
+  The closed binder, seen from the front: a cover a little taller than
+  wide, with square corners on the spine side (left) and rounded corners
+  on the opening side (right), like a real binder.
+  A faint diagonal gradient (light, then the base color, then dark) gives
+  the cover a soft sheen. The shades come from the cover's color class
+  (".cover-gold" etc., in styles/covers.css) or a custom color's own.
+  The --cover-text / --cover-label-* values color the name label: light
+  text on dark covers (here), dark text on pale ones (.light, below).
+*/
+.cover {
+  --cover-text: #e9e5dc;
+  --cover-label-line: rgba(255, 255, 255, 0.16);
+  --cover-label-fill: rgba(255, 255, 255, 0.05);
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 10 / 12;
+  border: 1px solid var(--cover-edge);
+  border-radius: 4px 12px 12px 4px;
+  background: linear-gradient(135deg, var(--cover-light) 0%, var(--cover-base) 55%, var(--cover-dark) 100%);
+  box-shadow: var(--binder-shadow);
+  transition: transform 0.3s cubic-bezier(0.34, 1.6, 0.64, 1), box-shadow 0.3s ease;
+}
+
+/* Pale covers (white, gold, light gray, pale custom colors): dark label text */
+.cover.light {
+  --cover-text: #24211c;
+  --cover-label-line: rgba(0, 0, 0, 0.28);
+  --cover-label-fill: rgba(255, 255, 255, 0.35);
+}
+
+/*
+  The spine along the left edge: a darker strip with a soft groove where
+  the cover bends. "::before" draws it without needing more HTML. It's
+  made of see-through blacks and whites laid over the cover, so it works
+  on every cover color: a darker band of whatever color the cover is.
+*/
+.cover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 15%;
+  border-radius: 4px 0 0 4px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.55) 80%, rgba(255, 255, 255, 0.08));
+  box-shadow: inset -2px 0 3px rgba(0, 0, 0, 0.6);
+}
+
+/*
+  The label window on the front of the cover, with the binder's name in
+  it, like the clear pocket on a real binder that you slide a label into.
+  The name always stays on ONE line ("nowrap"). If a name of extra-wide
+  letters doesn't fit even at the smallest size (see ClosedBinder.tsx),
+  it ends in "…" instead of wrapping.
+*/
+.label {
+  position: absolute;
+  top: 9%;                        /* near the top, leaving the center for the symbol */
+  left: 22%;
+  right: 7%;
+  display: block;
+  padding: 10px 4px;
+  line-height: 1.2;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--cover-text);
+  border: 1px solid var(--cover-label-line);
+  border-radius: 3px;
+  background: var(--cover-label-fill);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+  The binder's cover symbol, in the center of the cover. The left
+  position skips the spine (15%), so the symbol is centered on the front
+  of the cover; "top: 50%" with the "translateY(-50%)" pull-back centers
+  it top to bottom. The glow and drop shadow help a black symbol stand
+  out on a black cover.
+*/
+.symbol {
+  position: absolute;
+  top: 50%;
+  left: calc(15% + (85% - 36%) / 2);
+  width: 36%;
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.6)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+/* The white "+" on the New binder spot, centered on the cover (leaving
+   out the spine, so it looks centered) */
+.plus {
+  position: absolute;
+  inset: 0 0 0 15%;
+  display: grid;
+  place-items: center;
+  font-size: 3.2rem;
+  font-weight: 300;
+  line-height: 1;
+  color: #ffffff;
+}
+
+/* People who turn on "reduce motion" get no lift (see the shelf's styles) */
+@media (prefers-reduced-motion: reduce) {
+  .cover { transition: none; }
+}
+
+/* Phones: smaller cover text to suit the smaller binders */
+@media (max-width: 560px) {
+  .label { font-size: 0.7rem; padding: 4px; }
+  .plus { font-size: 2.6rem; }
+}

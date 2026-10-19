@@ -1,0 +1,15 @@
+/* The "page not found" note: a box in the page's surface color, centered,
+   no wider than 560px, and always 16px in from each side on a phone
+   ("min" picks whichever width is smaller) */
+.box {
+  width: min(560px, 100% - 32px);
+  margin: 24px auto;
+  padding: 8px 24px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  line-height: 1.6;
+}
+
+/* Links in the note, in the accent color */
+.box a { color: var(--accent); }

@@ -1,0 +1,119 @@
+/* =====================================================================
+   FOOTER: the strip of page links along the bottom of the window, with
+   Sign out / Sign in at the far right (the same look as the original)
+   ===================================================================== */
+
+/*
+  The strip pinned to the bottom of the window, with a thin line above
+  it. "position: fixed" keeps it at the window's bottom edge all the
+  time, even if the page scrolls; the solid background hides anything
+  passing underneath it, and z-index 50 keeps it on top.
+  "line-height: 20px" fixes its height at 43px (1px line + 10px + 20px
+  text + 12px), which is the body's bottom padding (in global.css).
+  Inside, a grid with three columns: the page links in the middle one and
+  Sign out in the right one. The two outer columns ("1fr") are always
+  equal in width, which keeps the page links exactly centered.
+*/
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  /* The text and gaps shrink smoothly as the window narrows: "clamp(smallest,
+     preferred, largest)", where 3.4vw is 3.4% of the window's width. The
+     gaps (--footer-gap) are 3% of the width, between 6px and 24px. */
+  font-size: clamp(0.7rem, 3.4vw, 0.9rem);
+  --footer-gap: clamp(6px, 3vw, 24px);
+  line-height: 20px;
+  transition: background-color 0.25s;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  column-gap: var(--footer-gap);
+}
+
+/* The page links go in the middle column */
+.footer nav { grid-column: 2; }
+
+/* Too narrow for the centered layout (see Footer.tsx): one centered row,
+   with Sign out (or Sign in) as the last item */
+.footer.compact {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* The list of page links: no bullets, centered, side by side, always on
+   one line ("nowrap") */
+.links {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 8px var(--footer-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each link uses the accent color, with no underline */
+.links a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* The link to the page you're already on looks like plain bold text */
+.links a[aria-current="page"] {
+  color: var(--text);
+  cursor: default;
+}
+/* In dark mode, the page you're on is solid white (in light mode it keeps
+   the dark text color above, since white wouldn't show on the light footer) */
+:global(:root[data-theme="dark"]) .links a[aria-current="page"] { color: #ffffff; }
+
+/*
+  "Sign out" / "Sign in with Google": a button (it does something) styled
+  like the links, at the far right. "font: inherit" also copies the
+  footer's 20px line height, so the footer stays exactly 43px tall.
+*/
+.account {
+  grid-column: 3;
+  justify-self: end;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.account:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* The short label ("Sign in") only shows on phones (640px or less),
+   and the long one ("Sign in with Google") everywhere else */
+.labelShort { display: none; }
+@media (max-width: 640px) {
+  .labelLong { display: none; }
+  .labelShort { display: inline; }
+}
+
+/*
+  The links (not the page you're on) and Sign out turn bold under the
+  mouse. Real bold letters are wider, which would push the links beside
+  them along. Instead, each letter gets a thin outline in its own color
+  ("-webkit-text-stroke"), which looks bold while taking up exactly the
+  same space, so nothing moves. 0.04em scales with the text's size.
+*/
+.links a:not([aria-current="page"]):hover,
+.account:hover:not(:disabled) {
+  -webkit-text-stroke: 0.04em currentColor;
+}

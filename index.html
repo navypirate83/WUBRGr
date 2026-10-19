@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Basic page setup: text encoding, mobile scaling, and the tab title
+       (each page sets its own title once React starts) -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WUBRG'r</title>
+
+  <!--
+    The site's icon (the open card binder), shown on the browser tab, in
+    bookmarks, and on a phone's home screen. Browsers pick the size they
+    need: 32px for tabs, 192px for Android, and "apple-touch-icon" (180px)
+    for iPhones and iPads. The files are in the "public" folder; Vite adds
+    the "/WUBRGr" part of the address in front of these paths.
+  -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/favicon-192.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+  <!--
+    This tiny script runs BEFORE the page draws, so the saved light/dark
+    choice is applied right away. Without it, the page could flash the
+    wrong colors while React starts up. It reads the same saved "theme"
+    as the original site (src/lib/theme.ts keeps it up to date).
+  -->
+  <script>
+    (function () {
+      var theme = null;
+      // Try to read the saved theme. Some browsers block storage, so we guard it.
+      try { theme = localStorage.getItem('theme'); } catch (e) {}
+      // No saved choice? Follow the device's own light/dark setting.
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+</head>
+<body>
+  <!-- React draws the whole app inside this empty box -->
+  <div id="root"></div>
+
+  <!-- The app's starting file (Vite turns it into plain JavaScript) -->
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

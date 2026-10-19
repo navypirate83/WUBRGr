@@ -1,0 +1,288 @@
+/* =====================================================================
+   MY BINDERS: THE SHELF (the same look as the original site)
+   The closed binder picture itself is in
+   components/binders/ClosedBinder.module.css; "[data-cover]" and
+   "[data-plus]" below find its cover and "+".
+   ===================================================================== */
+
+/* The page: centered across the window, starting near the top. It can
+   be as wide as the window (up to 1400px on very big screens), so the
+   shelf can fit more binders across when there's room. */
+.shelfArea {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 16px 32px;
+}
+
+/* "Signed in as …" above the binders (Sign out is in the footer) */
+.accountLine {
+  min-height: 1.2em;
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/*
+  The shelf: a grid that fits as many binders across as the window allows.
+  - --tile-width is each binder's width, and --gap-x / --gap-y the space
+    between them. Smaller windows and phones use smaller sizes (see the
+    @media rules just below), so the number across changes to fit.
+  - "repeat(auto-fit, …)" makes as many columns as fit. "auto-fit" also
+    drops the empty columns when there aren't enough binders to fill a
+    row, and "justify-content: center" then centers the ones there are.
+  Binders fill in left to right, top to bottom.
+*/
+.shelf {
+  --tile-width: 150px;
+  --gap-x: 40px;
+  --gap-y: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--tile-width));
+  justify-content: center;
+  gap: var(--gap-y) var(--gap-x);
+  margin-top: 28px;
+  /* Dragging binders shouldn't highlight (select) text on the shelf */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Medium windows and tablets: slightly smaller binders and gaps */
+@media (max-width: 900px) {
+  .shelf { --tile-width: 130px; --gap-x: 28px; --gap-y: 28px; }
+}
+
+/* Phones: small binders and gaps, so three fit across a normal phone
+   (and two on the narrowest ones) */
+@media (max-width: 560px) {
+  .shelf { --tile-width: 100px; --gap-x: 14px; --gap-y: 22px; }
+}
+
+/* A message under the shelf (e.g. "Loading your binders…"), red for a problem */
+.shelfMessage {
+  min-height: 1.4em;
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.shelfMessage.error { color: var(--error); }
+
+/* =====================================================================
+   ONE SPOT ON THE SHELF
+   ===================================================================== */
+
+/* The holder for one binder and its download button, so the button can
+   be placed against its edges */
+.slot { position: relative; }
+
+/*
+  A closed binder with a caption under it. It's a link (to open that
+  binder) or, for the "+" binder, a button. Both are reset here to look
+  the same: no underline, no button box.
+*/
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: var(--text);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  /* On iPhones, a long press on a link normally pops up a preview; a long
+     press picks the binder up instead, so turn that preview off */
+  -webkit-touch-callout: none;
+  /* Let the page scroll with a finger; dnd-kit takes over once a binder lifts */
+  touch-action: manipulation;
+}
+.tile:disabled { cursor: progress; opacity: 0.6; }
+
+/* The box around the cover inside a binder's link (what's dragged) */
+.coverHolder {
+  display: block;
+  width: 100%;
+}
+
+/* The caption under each binder: its card count, or "New binder" */
+.caption {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/*
+  The small download button: a round down arrow at the right edge, on
+  the same line as the card count. It's placed on top ("absolute") rather
+  than beside the count, so the count stays centered under the binder.
+  It's quiet (muted color) until the mouse is over it.
+*/
+.download {
+  position: absolute;
+  right: 0;
+  bottom: -3px;             /* centers it on the card count's line */
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.download svg { width: 14px; height: 14px; }
+.download:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/*
+  Hovering (or reaching with the Tab key): the binder lifts a little with
+  a springy bounce and a bigger shadow, and the "+" turns bold.
+  "(hover: hover)" limits the lift to devices with a mouse.
+*/
+@media (hover: hover) {
+  .tile:hover [data-cover] {
+    transform: translateY(-6px);
+    box-shadow: var(--binder-shadow-lift);
+  }
+}
+.tile:focus-visible { outline: none; }
+.tile:focus-visible [data-cover] {
+  transform: translateY(-6px);
+  box-shadow: var(--binder-shadow-lift);
+  /* The keyboard's binder: an accent-colored outline around its cover */
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+/* The New binder "+" turns bold and orange. The cover is always black, so
+   it uses the bright orange in both themes. */
+.tile:hover [data-plus],
+.tile:focus-visible [data-plus] {
+  font-weight: 800;
+  color: #e38a5c;
+}
+
+/* People who turn on "reduce motion" get no lift */
+@media (prefers-reduced-motion: reduce) {
+  .tile:hover [data-cover],
+  .tile:focus-visible [data-cover] { transform: none; }
+}
+
+/* =====================================================================
+   DRAGGING (with the mouse, a finger or the keyboard)
+   ===================================================================== */
+
+/* The binder being dragged OUT of its spot fades (its download button too) */
+.dragSource { opacity: 0.3; }
+.slot:has(.dragSource) .download { opacity: 0.3; }
+
+/* The spot the binder would move INTO: a dashed accent-colored outline
+   around that binder's cover (also on the keyboard's spot, overriding
+   the solid keyboard outline above) */
+.dropTarget [data-cover],
+.dropTarget:focus-visible [data-cover] {
+  outline: 2px dashed var(--accent);
+  outline-offset: 5px;
+}
+
+/* The floating copy of the binder that follows the pointer: tilted a
+   little and slightly bigger, with a deeper shadow */
+.ghost {
+  transform: rotate(-3deg) scale(1.05);
+  transition: opacity 0.15s ease;
+}
+.ghost [data-cover] { box-shadow: 0 16px 34px rgba(0, 0, 0, 0.55); }
+
+/* Over the edit or delete circle: the floating binder fades so the
+   circle shows through it */
+.ghost.overZone { opacity: 0.35; }
+
+/* While dragging, show the "grabbing hand" cursor everywhere (the page
+   adds this class to <body> during a drag) */
+:global(body).dragging,
+:global(body).dragging * {
+  cursor: grabbing !important;
+}
+
+/*
+  The two drop circles (edit at the top, delete at the bottom), shown
+  only while a binder is being dragged. They're pinned to the window
+  ("fixed"), centered across it with left: 50% and a translate back by
+  half their width.
+*/
+.dropZone {
+  position: fixed;
+  left: 50%;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  transform: translateX(-50%);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  pointer-events: none;
+}
+.dropZone svg { width: 30px; height: 30px; }
+
+/* The edit circle: at the top of the page, in the empty middle of the top
+   bar, in the accent color with a pencil */
+.editZone {
+  top: 4px;
+  background: var(--accent);
+}
+
+/* The delete circle: at the bottom middle, just above the footer (the
+   footer is 43px tall, plus a 16px gap), red with an X */
+.deleteZone {
+  bottom: 59px;
+  background: var(--danger);
+}
+
+/* A binder is over a circle: grow it and brighten it, so it's clear that
+   letting go here will edit or delete */
+.editZone.active {
+  transform: translateX(-50%) scale(1.25);
+  filter: brightness(1.15);
+}
+.deleteZone.active {
+  background: var(--danger-bright);
+  transform: translateX(-50%) scale(1.25);
+}
+
+/* =====================================================================
+   THE KEY GUIDE
+   A small dark pill pinned to the bottom middle of the window, just
+   above the footer, listing the keys that work right now. It only shows
+   while the keyboard is on the shelf. "pointer-events: none" lets clicks
+   pass through it, and "nowrap" + "ellipsis" keep it to one line.
+   ===================================================================== */
+.keyboardHint {
+  position: fixed;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100vw - 32px);
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  color: #f4efe7;
+  background: rgba(20, 21, 26, 0.92);
+  border: 1px solid #e38a5c;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}

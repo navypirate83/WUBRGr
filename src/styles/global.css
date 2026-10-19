@@ -1,0 +1,186 @@
+/* =========================================================================
+   global.css: styles for the whole site (the color tokens and page
+   basics). Each component's own look is in its ".module.css" file next to
+   it. CSS Modules give that file's class names a unique ending, so two
+   components can both have a ".title" class without clashing.
+   ========================================================================= */
+
+/* =====================================================================
+   THEME COLORS  (the same tokens as the original site, so it matches)
+   ===================================================================== */
+
+/*
+  Color "tokens" for LIGHT mode. Every color on the site uses these
+  variables, so switching themes only means swapping this list.
+*/
+:root {
+  --bg: #f4f1ea;
+  --surface: #ffffff;
+  --text: #1e1c19;
+  --muted: #6c675f;
+  --border: #d8d2c6;
+  --accent: #a8492a;
+  --error: #c0392b;
+  /* "Danger" red for delete buttons (and a brighter red for hovering),
+     the same in both themes */
+  --danger: #c0392b;
+  --danger-bright: #e74c3c;
+  --switch-track: #e3dccf;
+  --switch-thumb: #ffffff;
+
+  /* A slightly darker surface, for rows under the mouse and title bars */
+  --surface-hover: #f0ebe1;
+  /* Text on top of the accent color */
+  --accent-text: #ffffff;
+  /* General shadow for pop-up lists and round floating buttons */
+  --shadow: 0 10px 30px rgba(40, 30, 20, 0.15);
+  /* A card picture's own shadow: a tight one close to the edges plus a
+     soft one spreading below, so it looks like it's resting just above
+     the page. "-lift" is the bigger one while it's lifted (mouse over). */
+  --card-shadow: 0 2px 4px rgba(40, 30, 20, 0.18), 0 8px 18px rgba(40, 30, 20, 0.16);
+  --card-shadow-lift: 0 6px 10px rgba(40, 30, 20, 0.16), 0 22px 36px rgba(40, 30, 20, 0.22);
+  /* Set symbols are black pictures: fine as they are on a light page */
+  --icon-filter: none;
+  /* How rounded boxes, buttons and drop-downs are */
+  --radius: 10px;
+
+  /* The black binder cover (black is the default cover color; the other
+     cover colors are in covers.css): a black cover with a slightly
+     lighter edge, and the shadows under a binder on the shelf (resting,
+     and lifted under the mouse) */
+  --binder-cover: #121214;
+  --binder-cover-edge: #2a2a2e;
+  --binder-shadow: 0 4px 8px rgba(40, 30, 20, 0.20), 0 14px 28px rgba(40, 30, 20, 0.25);
+  --binder-shadow-lift: 0 8px 14px rgba(40, 30, 20, 0.22), 0 24px 40px rgba(40, 30, 20, 0.30);
+
+  /* Inside an open binder: slightly lighter black pages and see-through
+     plastic pockets. A real binder is black in any light, so these are
+     the same in both themes. */
+  --binder-page: #1b1b1f;
+  --pocket-fill: #232328;
+  --pocket-edge: rgba(255, 255, 255, 0.10);
+  --pocket-shine: rgba(255, 255, 255, 0.07);
+  /* The bright orange (dark mode's accent), used in BOTH themes for things
+     that always sit on black, like the "+" in empty pockets and the
+     "− 3 +" buttons on cards, where the darker orange would be hard to see */
+  --accent-on-dark: #e38a5c;
+
+  /* Google's sign-in button colors for light pages */
+  --google-bg: #ffffff;
+  --google-border: #747775;
+  --google-text: #1f1f1f;
+}
+
+/*
+  Color tokens for DARK mode. These replace the light ones whenever the
+  <html> tag has data-theme="dark".
+*/
+:root[data-theme="dark"] {
+  --bg: #14151a;
+  --surface: #1e2027;
+  --text: #ece9e3;
+  --muted: #9b968e;
+  --border: #343741;
+  --accent: #e38a5c;
+  --error: #f07167;
+  --switch-track: #2f323c;
+  --switch-thumb: #14151a;
+
+  --surface-hover: #2a2d36;
+  --accent-text: #1a1206;
+  /* Dark backgrounds hide shadows, so these are darker and stronger */
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.6), 0 10px 22px rgba(0, 0, 0, 0.65);
+  --card-shadow-lift: 0 8px 12px rgba(0, 0, 0, 0.6), 0 26px 40px rgba(0, 0, 0, 0.75);
+  /* Flip the black set symbols to white, so they show on a dark page */
+  --icon-filter: invert(1);
+
+  /* On a dark background the black cover needs a lighter edge to stand out */
+  --binder-cover: #0b0b0d;
+  --binder-cover-edge: #3a3c45;
+  --binder-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), 0 14px 28px rgba(0, 0, 0, 0.7);
+  --binder-shadow-lift: 0 8px 14px rgba(0, 0, 0, 0.6), 0 24px 40px rgba(0, 0, 0, 0.8);
+
+  /* Google's sign-in button colors for dark pages */
+  --google-bg: #131314;
+  --google-border: #8e918f;
+  --google-text: #e3e3e3;
+}
+
+/* =====================================================================
+   PAGE BASICS
+   ===================================================================== */
+
+/* Make width/height include padding and borders: easier sizing math */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Anything with the "hidden" attribute stays hidden, even if another
+   rule would otherwise show it */
+[hidden] { display: none !important; }
+
+/*
+  Page-wide basics: font, colors, and a smooth fade when the theme changes.
+  The bottom padding (43px) leaves room for the footer pinned to the
+  bottom of the window, so nothing ends up hidden behind it.
+*/
+body {
+  margin: 0;
+  padding-bottom: 43px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.25s, color 0.25s;
+}
+
+/*
+  The box React draws into, and the page inside it: a column at least as
+  tall as the window (minus the footer), so the middle part can stretch.
+  "svh" is a percentage of the window's height that ignores a phone's
+  sliding address bar.
+*/
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100svh - 43px);
+}
+
+/* The middle of the page, between the top bar and the footer: takes all
+   the spare height ("flex: 1") */
+main { flex: 1; }
+
+/* A visible outline on buttons, links and drop-downs reached with the
+   keyboard (Tab key) */
+button:focus-visible,
+a:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Hidden text that screen readers still read out */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* A key, like "M" or "Space": a small rounded box with a border, the way
+   keys are usually shown in instructions (used in the Keyboard shortcuts
+   windows) */
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 5px;
+  font-family: inherit;
+  font-size: 0.85em;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+}

@@ -1,0 +1,315 @@
+/* =====================================================================
+   THE BINDER WINDOWS (pop-ups): New binder, Binder properties and
+   Delete this binder? (the same look as the original site)
+   ===================================================================== */
+
+/*
+  The pop-up window itself. A <dialog> opened with showModal() is
+  centered on the screen by the browser; these rules give it the page's
+  colors, rounded corners and a shadow. "max-width: calc(100vw - 32px)"
+  keeps a 16px gap at each side on a phone.
+*/
+.dialog {
+  width: 460px;
+  max-width: calc(100vw - 32px);
+  padding: 24px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+/* The dimmed layer the browser puts over the page behind the window */
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* The window's title ("New binder") and a line of text under it */
+.title {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+}
+.text {
+  padding: 0;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* "NAME" / "PAGES": the small headings above the boxes */
+.fieldLabel {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The name box with its "5 / 12" counter on the right inside it */
+.nameField {
+  position: relative;
+  margin-bottom: 16px;
+}
+.nameInput {
+  width: 100%;
+  padding: 10px 64px 10px 12px;   /* room on the right for the counter */
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.nameInput:focus,
+.pagesInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.nameCount {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* The Pages row: a small number box with a note beside it explaining the
+   limits ("Holds 160 cards · 3 to 150 pages"). The note wraps under the
+   box on a narrow phone. */
+.pagesField {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-bottom: 16px;
+}
+.pagesInput {
+  width: 90px;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.pagesNote {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+/* The note turns red while the number is outside the allowed range */
+.pagesNote.error { color: var(--error); }
+
+/* =====================================================================
+   THE SYMBOL AND COVER COLOR CHOICES
+   ===================================================================== */
+
+/* A group of choices: no box around it (a fieldset normally has one) */
+.choices {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* The "Cover color" group comes right after the symbol group, so give it
+   some space above to keep the two groups apart */
+.choices + .choices { margin-top: 16px; }
+
+/*
+  The symbol choices are in two groups:
+  - the single symbols (None, the five colors, Colorless, Planeswalker):
+    two rows of 4
+  - the ten two-color symbols, under a "Two colors" heading: two rows of 5
+*/
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.colorGrid.twoColors { grid-template-columns: repeat(5, 1fr); }
+
+/* The cover color choices: the nine colors and "Custom", in two rows of 5 */
+.coverGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+/* The small "Two colors" heading between the two symbol groups */
+.groupTitle {
+  margin: 14px 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/*
+  One choice: the symbol (or swatch) with its name under it, in a
+  rounded box. The real radio button is hidden visually (but still works
+  for the keyboard and screen readers); the box shows which one is picked.
+*/
+.choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 2px 8px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.choice:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+/* The radio button itself: invisible, laid over the whole box so it's
+   still clicked and focused like normal */
+.choice input[type="radio"] {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* The picked choice: an accent-colored border and a light accent tint.
+   ":has(input:checked)" means "a choice whose radio button is ticked". */
+.choice:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* A keyboard user moving through the choices sees an outline */
+.choice:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The symbol picture (or the empty "None" circle) */
+.symbol {
+  width: 36px;
+  height: 36px;
+}
+
+/* "None": an empty circle with a slash through it, drawn with a border
+   and a gradient line, so it reads as "no symbol" */
+.noSymbol {
+  display: block;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: linear-gradient(135deg, transparent 46%, var(--muted) 46%, var(--muted) 54%, transparent 54%);
+}
+
+/* A cover color swatch: a round sample of the cover, drawn with the same
+   gradient and edge as the closed binder (its "cover-<color>" class, or
+   its own shades for a custom color, supplies them) */
+.swatch {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--cover-edge);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cover-light) 0%, var(--cover-base) 55%, var(--cover-dark) 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* "Custom" before a color is picked: a rainbow circle, saying "any color" */
+.swatch.rainbow {
+  background: conic-gradient(#e53935, #fdd835, #43a047, #1e88e5, #8e24aa, #e53935);
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+/* The device's color chooser behind "Custom": invisible and tiny, sitting
+   over the swatch so the chooser pops up there. It's not "display: none",
+   because a hidden-away input can't be opened. pointer-events: none lets
+   clicks go to the radio button instead. */
+.colorInput {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The color's name under its symbol or swatch */
+.choiceName {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* =====================================================================
+   THE BUTTONS ALONG THE BOTTOM
+   ===================================================================== */
+
+/* The buttons, on the right. "row-reverse" shows them in the opposite
+   order to the code, so Cancel is on the left even though "Create binder"
+   comes first in the code (it comes first so Enter presses it). */
+.buttons {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+/* The Delete window's buttons show in normal order (No, then Yes) */
+.buttons.normalOrder {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+/* "Upload .JSON" in the New binder window on My Binders: pushed to the
+   far left ("margin-right: auto" soaks up the spare room on its right,
+   since the buttons are in reverse order). With three buttons, a narrow
+   phone has no room for one row, so they may wrap. */
+.buttons .uploadButton { margin-right: auto; }
+.buttons:has(.uploadButton) { flex-wrap: wrap; }
+
+/* Every button: rounded, the page's font */
+.button {
+  padding: 9px 18px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.button:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+
+/* "Create binder" / "Save" is the main action, so it's filled with the accent color */
+.button.primary {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.button.primary:hover { filter: brightness(1.1); }
+
+/* "Yes, delete": red, since it removes something */
+.button.danger {
+  color: #ffffff;
+  background: var(--danger);
+  border-color: var(--danger);
+}
+.button.danger:hover { background: var(--danger-bright); }
+
+/* Phones: tighter symbol and cover color choices (smaller names,
+   pictures and gaps) so 5 fit across a phone */
+@media (max-width: 560px) {
+  .colorGrid, .coverGrid { gap: 4px; }
+  .choiceName { font-size: 0.65rem; }
+  .symbol, .swatch { width: 30px; height: 30px; }
+}

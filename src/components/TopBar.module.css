@@ -1,0 +1,172 @@
+/* =====================================================================
+   TOP BAR: the back button, the app's name, and the Settings button or
+   the light/dark switch (the same look as the original site)
+   ":global(...)" below means "this part is a normal, site-wide name":
+   CSS Modules would otherwise rename it like the classes here.
+   ===================================================================== */
+
+/*
+  The top bar: the title on the left, the page's own tools in the middle
+  (only the binder page has any) and the Settings button or theme switch
+  on the right.
+  It's a "grid" with three columns: the two outer ones ("1fr") share the
+  leftover space equally, so the middle one ("auto") lands exactly in
+  the center of the bar no matter how long the title is.
+*/
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+/* The middle: the page's tools side by side (none on most pages) */
+.tools {
+  display: flex;
+  gap: 20px;
+}
+
+/*
+  On phones there's no room for all three in one row, so a page's tools
+  move to a second row under the title and switch, centered across the
+  bar. "grid-template-areas" names the spots: title and switch on row
+  one, tools across the whole of row two. ":has(.tools:not(:empty))"
+  means "only when the tools box has something in it".
+*/
+@media (max-width: 640px) {
+  .topbar:has(.tools:not(:empty)) {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "title switch"
+      "tools tools";
+    row-gap: 8px;
+  }
+  .topbar:has(.tools:not(:empty)) .titleGroup { grid-area: title; }
+  .topbar:has(.tools:not(:empty)) .right { grid-area: switch; }
+  .topbar:has(.tools:not(:empty)) .tools {
+    grid-area: tools;
+    justify-content: center;
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+  /* No tools: an empty middle column takes no room */
+  .tools:empty { display: none; }
+}
+
+/* The back button and the title side by side, lined up in the middle.
+   "min-width: 0" lets the title shrink on a narrow phone instead of
+   overflowing. */
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* The app's name */
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* =====================================================================
+   BACK BUTTON
+   ===================================================================== */
+
+/* A round outlined button with a left arrow, the same height as the
+   light/dark switch. It turns orange under the mouse. */
+.backButton {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.backButton svg { width: 18px; height: 18px; }
+.backButton:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Nowhere to go back to: faded, and the pointer shows it can't be clicked */
+.backButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* On wider screens, the title is a little bigger */
+@media (min-width: 720px) {
+  .title { font-size: 1.5rem; }
+}
+
+/* The narrowest phones (360px or less): make the title a little smaller
+   and keep it on one line ("nowrap"), with a smaller gap */
+@media (max-width: 360px) {
+  .titleGroup { gap: 8px; }
+  .title { font-size: 1.1rem; white-space: nowrap; }
+}
+
+/* =====================================================================
+   THE APP'S NAME IN MAGIC COLORS: white, blue, purple (for black), red
+   and green. Light mode uses deeper shades so the letters stand out on
+   the light background; dark mode uses brighter ones.
+   ===================================================================== */
+
+/* The W: solid white in both themes, with a thin black outline so it
+   still shows up on the light background. The outline is four small
+   shadows, nudged 1px up-left, up-right, down-left and down-right. */
+.manaW {
+  color: #ffffff;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+.manaU { color: #1d6fd6; }
+.manaB { color: #7b3fd1; }
+.manaR { color: #c92a2a; }
+.manaG { color: #2b8a3e; }
+:global(:root[data-theme="dark"]) .manaU { color: #5aa9ff; }
+:global(:root[data-theme="dark"]) .manaB { color: #b182ff; }
+:global(:root[data-theme="dark"]) .manaR { color: #ff6b6b; }
+:global(:root[data-theme="dark"]) .manaG { color: #51cf66; }
+
+/* =====================================================================
+   THE RIGHT END: SETTINGS BUTTON OR LIGHT/DARK SWITCH
+   (the switch's own look is in ThemeSwitch.module.css)
+   ===================================================================== */
+
+/* The right end's box, at the far right of its column. It's 32px tall
+   either way, so the bar stays the same height (60px). */
+.right {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  height: 32px;
+}
+
+/* The Settings button: a round outlined gear, the same size as the back
+   button. It turns orange under the mouse, and on the Settings page. */
+.settingsButton {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  transition: color 0.15s, border-color 0.15s;
+}
+.settingsButton svg { width: 18px; height: 18px; }
+.settingsButton:hover,
+.settingsButton[aria-current="page"] {
+  color: var(--accent);
+  border-color: var(--accent);
+}

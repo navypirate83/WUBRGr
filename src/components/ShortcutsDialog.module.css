@@ -1,0 +1,65 @@
+/* =====================================================================
+   KEYBOARD SHORTCUTS WINDOW: what goes inside it. (The window itself
+   looks like the other pop-up windows: see Modal.tsx and
+   binders/BinderWindows.module.css.)
+   ===================================================================== */
+
+/* "Keyboard shortcuts" at the top */
+.title {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+}
+
+/* The line under the title, above the list (on pages that have one):
+   small and in the softer text color. The negative top margin pulls it
+   up closer to the title. */
+.intro {
+  margin: -10px 0 16px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/*
+  The list: the keys in a narrow column on the left, what they do on
+  the right (a two-column grid). Each row is wrapped in a <div> (which
+  is allowed inside a <dl>); "display: contents" makes the grid ignore
+  the wrapper and lay out the key and its meaning as two cells.
+*/
+.list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 16px;
+  align-items: center;
+  margin: 0;
+}
+.row { display: contents; }
+.list dt { white-space: nowrap; }
+.list dd { margin: 0; font-size: 0.95rem; }
+
+/* The note under the list, in the softer text color */
+.note {
+  margin: 16px 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* The Close button along the bottom, on the right */
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+/* The Close button: rounded, filled with the accent color */
+.primaryButton {
+  padding: 9px 18px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.primaryButton:hover { filter: brightness(1.1); }

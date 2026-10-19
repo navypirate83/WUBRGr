@@ -1,0 +1,68 @@
+/* =====================================================================
+   COVER COLORS (used by the binders on the shelf, the cover color
+   choices in the binder windows, and the dots in the Search page's
+   "Add to which binder?" menu). These are ordinary site-wide classes,
+   not a CSS Module, because lib/covers.ts names them in code.
+   ===================================================================== */
+
+/*
+  Each class sets the shades a cover is drawn with:
+    --cover-light / --cover-base / --cover-dark: the sheen gradient
+    --cover-edge: the thin border around the cover
+  Black is the default and uses --binder-cover and --binder-cover-edge
+  (set in global.css for light and dark mode).
+*/
+.cover-black {
+  --cover-light: #2a2a30;
+  --cover-base: var(--binder-cover, #121214);
+  --cover-dark: #050506;
+  --cover-edge: var(--binder-cover-edge, #2a2a2e);
+}
+.cover-white {
+  --cover-light: #fbfaf7;
+  --cover-base: #e9e6df;
+  --cover-dark: #c9c4b8;
+  --cover-edge: #b8b2a5;
+}
+.cover-blue {
+  --cover-light: #3a6fb5;
+  --cover-base: #1f4f8f;
+  --cover-dark: #12305a;
+  --cover-edge: #2c5d9e;
+}
+.cover-red {
+  --cover-light: #b33a32;
+  --cover-base: #8e2020;
+  --cover-dark: #561010;
+  --cover-edge: #a02c28;
+}
+.cover-green {
+  --cover-light: #2f8a50;
+  --cover-base: #1f6a3a;
+  --cover-dark: #113f22;
+  --cover-edge: #287a45;
+}
+.cover-gold {
+  --cover-light: #dcb64a;
+  --cover-base: #b8902a;
+  --cover-dark: #7d5f14;
+  --cover-edge: #9c7a20;
+}
+.cover-purple {
+  --cover-light: #7d4bb3;
+  --cover-base: #5b2d8e;
+  --cover-dark: #361a57;
+  --cover-edge: #6a3aa0;
+}
+.cover-orange {
+  --cover-light: #e8893a;
+  --cover-base: #c8641c;
+  --cover-dark: #8a3f0c;
+  --cover-edge: #a9541a;
+}
+.cover-gray {
+  --cover-light: #d6d8dc;
+  --cover-base: #b9bcc2;
+  --cover-dark: #8d9096;
+  --cover-edge: #9a9da3;
+}

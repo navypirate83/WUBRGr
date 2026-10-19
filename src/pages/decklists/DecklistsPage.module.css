@@ -1,0 +1,21 @@
+/* =====================================================================
+   DECKLISTS PAGE
+   ===================================================================== */
+
+/* The page: centered, no wider than 760px, with 16px of room at each side */
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+}
+
+/* "Decklists", and the line under it */
+.pageTitle {
+  margin: 12px 0 6px;
+  font-size: 1.6rem;
+}
+.intro {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--muted);
+}

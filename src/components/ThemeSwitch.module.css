@@ -1,0 +1,46 @@
+/* =====================================================================
+   THE LIGHT/DARK SWITCH (the same look as the original site)
+   ":global(...)" means "this part is a normal, site-wide name": CSS
+   Modules would otherwise rename it like the classes here.
+   ===================================================================== */
+
+/* The switch itself: a pill-shaped button (the "track") */
+.themeSwitch {
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--switch-track);
+  cursor: pointer;
+}
+
+/* The sun and moon icons that sit inside the track, one at each end */
+.icon {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.sun  { left: 8px;  color: #d9921c; }
+.moon { right: 8px; color: #8fa3d9; }
+
+/* The round "thumb" that slides left (light) or right (dark) */
+.thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--switch-thumb);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s ease;
+}
+
+/* In dark mode, slide the thumb over to the right (moon) side */
+:global(:root[data-theme="dark"]) .thumb { transform: translateX(32px); }

@@ -1,0 +1,31 @@
+{
+  // Settings for TypeScript, which checks the code for mistakes (like
+  // using a value of the wrong type) before it runs. "npm run typecheck"
+  // runs the check. Vite turns the code into plain JavaScript itself, so
+  // TypeScript only checks here and never writes any files ("noEmit").
+  "compilerOptions": {
+    // Which version of JavaScript to aim for, and which built-in browser
+    // features (like "document") the code is allowed to use
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+
+    // Vite's own types: they tell TypeScript about things like importing
+    // a ".module.css" file
+    "types": ["vite/client"],
+
+    // Strict checking: catches more mistakes, like forgetting that a
+    // value might be missing
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  // The files to check: all the app's code, plus Vite's settings file
+  "include": ["src", "vite.config.ts"]
+}

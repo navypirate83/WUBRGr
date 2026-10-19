@@ -1,0 +1,61 @@
+# =====================================================================
+# PUBLISHING THE SITE TO GITHUB PAGES
+# Every time new code reaches the "main" branch on GitHub, GitHub runs
+# these steps on one of its own computers: it builds the finished site
+# ("npm run build", which makes the "dist" folder) and publishes it at
+# https://navypirate83.github.io/WUBRGr/
+# (It can also be started by hand, from the repository's "Actions" tab.)
+# =====================================================================
+
+name: Publish to GitHub Pages
+
+# When to run: on every push to main, or when started by hand
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# What these steps are allowed to do: read the code, and publish to Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one publish at a time: a newer push waits for the one running
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # Step 1: build the site
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Get a copy of the code
+      - uses: actions/checkout@v4
+      # Install Node.js (the same major version used to write the site),
+      # remembering downloaded packages between runs to save time
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # Install the exact packages listed in package-lock.json
+      - run: npm ci
+      # Check the code and build the finished site into "dist"
+      - run: npm run build
+      # Get GitHub Pages ready, then hand it the "dist" folder
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  # Step 2: publish what was built (only once the build worked)
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
