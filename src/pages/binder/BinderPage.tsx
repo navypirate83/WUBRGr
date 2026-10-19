@@ -18,7 +18,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { Navigate, useParams, useSearchParams } from 'react-router';
+import { Navigate, useLocation, useParams, useSearchParams } from 'react-router';
 import {
   DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors,
   type DragStartEvent, type DragMoveEvent,
@@ -30,6 +30,7 @@ import Modal from '../../components/Modal';
 import ShortcutsDialog, { type Shortcut } from '../../components/ShortcutsDialog';
 import { TOPBAR_TOOLS_ID } from '../../components/TopBar';
 import Pocket from './Pocket';
+import BinderSearch from '../../components/binders/BinderSearch';
 import MoveCardDialog from './MoveCardDialog';
 import {
   MAX_COPIES, MAX_PAGES, POCKETS_PER_PAGE,
@@ -610,6 +611,25 @@ function BinderPage({ binderId }: { binderId: string }) {
   // True after M, Delete or − (last copy) opened a window from the keyboard
   const keyboardOpenedWindow = useRef(false);
 
+  /* ----- A card found with the search bar ----- */
+
+  // The search bar opens a binder with "highlight=3-5" in the address:
+  // turn to that pocket's page, put the keyboard's pocket there, and
+  // highlight it (until the next click or key press in the binder).
+  // "location.key" is new each time, so finding the same card again
+  // highlights it again.
+  const location = useLocation();
+  const highlightParam = params.get('highlight');
+  const [highlightKey, setHighlightKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!highlightParam || !/^\d+-\d+$/.test(highlightParam)) return;
+    const page = pageOf(highlightParam);
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    setActiveKey(highlightParam);
+    setHighlightKey(highlightParam);
+  }, [highlightParam, location.key, totalPages]);
+
   // Put the keyboard back on its pocket after a window it opened closes.
   function returnFocus() {
     if (!keyboardOpenedWindow.current) return;
@@ -871,6 +891,12 @@ function BinderPage({ binderId }: { binderId: string }) {
         toolsBox,
       )}
 
+      {/* Search the cards in every binder (or, with its box ticked, just
+          this one), as wide as the binder */}
+      <div className={styles.searchRow}>
+        <BinderSearch currentBinderId={binderId} />
+      </div>
+
       <DndContext
         sensors={sensors}
         autoScroll={false}
@@ -910,8 +936,10 @@ function BinderPage({ binderId }: { binderId: string }) {
             if ((event.target as HTMLElement).closest(`.${styles.pocketCard}`)) event.preventDefault();
           }}
           // Starting a mouse or finger drag while carrying a card with the
-          // keyboard puts the keyboard's card back first
-          onPointerDownCapture={() => setCarrying(null)}
+          // keyboard puts the keyboard's card back first. Any click (or
+          // key press) in the binder also ends a search highlight.
+          onPointerDownCapture={() => { setCarrying(null); setHighlightKey(null); }}
+          onKeyDownCapture={() => setHighlightKey(null)}
           // Swiping on a phone (see touchStart above)
           onTouchStart={(event) => { touchStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY }; }}
           onTouchEnd={(event) => {
@@ -975,6 +1003,7 @@ function BinderPage({ binderId }: { binderId: string }) {
                     tabStop={key === activeKey}
                     loaded={loadedPages.has(n)}
                     faded={carrying === key}
+                    highlighted={highlightKey === key}
                     outlined={dragTarget === key || outsideTarget === key ||
                       (carrying !== null && activeKey === key && carrying !== key)}
                     loading={dropLoading === key}

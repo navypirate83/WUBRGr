@@ -174,11 +174,40 @@ export const helpTopics: HelpTopic[] = [
         ),
       },
       {
+        id: 'my-binders-search',
+        title: 'Searching your binders',
+        body: (
+          <>
+            <p>
+              The <strong>Search your binders</strong> bar sits at the top of My Binders and
+              above every binder's pages. It only looks at the cards in your binders. Start
+              typing a card's name: part of it is enough, and small typos are fine
+              ("demnic" still finds Demonic Tutor).
+            </p>
+            <ul>
+              <li>A list shows every match, with the binder and page it's in (and "×3" if a
+                pocket holds several copies).</li>
+              <li>Click one, or use the <strong>up and down arrow keys</strong> and press
+                <strong> Enter</strong>. <strong>Enter</strong> (or the magnifying glass) on its own
+                goes to the top match.</li>
+              <li>The binder opens at that page, with the card's pocket <strong>outlined and
+                glowing</strong>. The glow goes when you click or press a key in the binder.</li>
+              <li>Inside a binder, tick <strong>Current binder only</strong> to search just that
+                binder. Unticked, it searches every binder.</li>
+              <li><strong>Escape</strong> closes the list (press it again to empty the box).</li>
+            </ul>
+          </>
+        ),
+      },
+      {
         id: 'my-binders-links',
         title: 'Getting around',
         body: (
           <>
-            <p>The links along the bottom of every page take you anywhere on the site:</p>
+            <p>
+              The bar along the top and the links along the bottom stay in place while you
+              scroll, so they're always there. The links take you anywhere on the site:
+            </p>
             <ul>
               <li><strong>Home</strong>: the welcome page. When you're signed in (or using the
                 site locally), it has no sign-in buttons, just a <strong>Go to your
@@ -220,7 +249,8 @@ export const helpTopics: HelpTopic[] = [
           <>
             <p>
               Everything you can do to binders with the mouse also works with the keyboard.
-              Press <strong>Tab</strong> to get onto the shelf. A guide at the bottom of the page
+              Press <strong>Tab</strong> to get onto the shelf (the first press reaches the search
+              bar; press it again for the binders). A guide at the bottom of the page
               shows which keys work right now.
             </p>
             <ul>
@@ -287,6 +317,23 @@ export const helpTopics: HelpTopic[] = [
             <li>On a phone, swipe <strong>left</strong> to go to the next page
               and <strong>right</strong> to go back.</li>
           </ul>
+        ),
+      },
+      {
+        id: 'binder-finding',
+        title: 'Finding a card',
+        body: (
+          <>
+            <p>
+              The <strong>Search your binders</strong> bar above the pages finds any card you
+              own. Type part of its name and pick it from the list. The right binder opens at the
+              right page, with the card's pocket <strong>outlined and glowing</strong>.
+            </p>
+            <p>
+              It searches all your binders. Tick <strong>Current binder only</strong> to search
+              just this one. (More in <HelpLink to="my-binders-search">Searching your binders</HelpLink>.)
+            </p>
+          </>
         ),
       },
       {
@@ -401,8 +448,8 @@ export const helpTopics: HelpTopic[] = [
         body: (
           <>
             <p>
-              Every change saves by itself. The message at the top of the page tells you
-              where it's saved: <strong>Saved to Drive</strong> when signed in,
+              Every change saves by itself. The message beside the binder's name in the top
+              bar tells you where it's saved: <strong>Saved to Drive</strong> when signed in,
               or <strong>Saved on this device</strong> when using the site locally. If your
               Google sign-in has run out, a <strong>Connect Drive</strong> button appears:
               click it to sign in again and finish saving.
@@ -426,7 +473,8 @@ export const helpTopics: HelpTopic[] = [
           <>
             <p>
               Everything you can do to cards with the mouse also works with the keyboard.
-              Press <strong>Tab</strong> to get into the binder. A guide at the top of the page
+              Press <strong>Tab</strong> to get into the binder (the first press reaches the
+              search bar and its tick box; keep going to reach the pockets). A guide at the top of the page
               shows which keys work right now.
             </p>
             <ul>
@@ -480,6 +528,14 @@ export const helpTopics: HelpTopic[] = [
                 the <strong>up and down arrow keys</strong> and press <strong>Enter</strong>.</li>
               <li>The card's picture appears, with its name, set and artist under it.</li>
             </ol>
+            <p>
+              To start again, click the <strong>×</strong> at the right end of the search box. It
+              empties the box, ready for a new name.
+            </p>
+            <p>
+              Looking for a card you already own? Use <strong>Search your binders</strong> on
+              My Binders instead (see <HelpLink to="my-binders-search">Searching your binders</HelpLink>).
+            </p>
             <p>
               Cards with two sides have a <strong>Flip card ↻</strong> button under the picture
               to see the other side.

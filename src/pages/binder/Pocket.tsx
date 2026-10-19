@@ -31,6 +31,8 @@ type Props = {
   faded: boolean;
   outlined: boolean;
   loading: boolean;
+  // Found with the search bar: a glowing outline shows where it is
+  highlighted?: boolean;
   // Keep track of the pocket's link (so the keyboard can be moved onto it)
   registerLink: (key: string, element: HTMLAnchorElement | null) => void;
   // The "−" / "+" buttons: one fewer (-1) or one more (+1) copy
@@ -56,7 +58,7 @@ function searchLinkFor(binderId: string, page: number, slot: number, card?: Bind
 }
 
 function Pocket(props: Props) {
-  const { binderId, page, slot, card, tabStop, loaded, faded, outlined, loading, registerLink, onCopies } = props;
+  const { binderId, page, slot, card, tabStop, loaded, faded, outlined, loading, highlighted, registerLink, onCopies } = props;
   const key = pocketKey(page, slot);
   // A card can be picked up and dragged (dnd-kit); an empty pocket can't.
   const draggable = useDraggable({ id: key, disabled: !card });
@@ -70,6 +72,7 @@ function Pocket(props: Props) {
     faded || draggable.isDragging ? styles.dragSource : '',
     outlined ? styles.dropTarget : '',
     loading ? styles.dropLoading : '',
+    highlighted ? styles.found : '',
   ].join(' ');
 
   return (

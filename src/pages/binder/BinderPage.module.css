@@ -9,7 +9,8 @@
    the whole page fits in the window with no scrolling.
    These "custom properties" (variables, written --name) do the math:
    - --top-gap: the space above the binder: the top bar (60px) + this
-     page's 8px top padding + the binder's 20px top margin = 88px.
+     page's 8px top padding + the search bar (4px gap + 38px) + the
+     binder's 20px top margin = 130px.
    - --bottom-space: everything below the binder: 16px gap + 33px
      Previous / Next row + 12px bottom padding + 43px footer + 2px spare
      (screens zoomed to 125% round sizes to fractions of a pixel) = 106px.
@@ -28,7 +29,7 @@
    If you change any of those sizes, update these numbers too.
    ===================================================================== */
 .page {
-  --top-gap: 88px;
+  --top-gap: 130px;
   --bottom-space: 106px;
   --binder-height: max(380px, calc(100svh - var(--top-gap) - var(--bottom-space)));
   --binder-chrome: 64px;
@@ -384,6 +385,38 @@
   to   { opacity: 1; }
 }
 
+/*
+  A pocket found with the search bar: a thick accent-colored outline and
+  a glow that pulses, so it's easy to spot on the page. "z-index" keeps
+  the glow above the pockets next to it. It stays until the next click
+  or key press in the binder.
+*/
+.pocket.found {
+  z-index: 2;
+  outline: 3px solid var(--accent-on-dark);
+  outline-offset: 2px;
+  animation: found-pulse 1s ease-in-out infinite alternate;
+}
+@keyframes found-pulse {
+  from { box-shadow: 0 0 6px 2px color-mix(in srgb, var(--accent-on-dark) 50%, transparent); }
+  to   { box-shadow: 0 0 22px 8px color-mix(in srgb, var(--accent-on-dark) 80%, transparent); }
+}
+/* People who turn on "reduce motion" get a steady glow instead */
+@media (prefers-reduced-motion: reduce) {
+  .pocket.found {
+    animation: none;
+    box-shadow: 0 0 16px 6px color-mix(in srgb, var(--accent-on-dark) 70%, transparent);
+  }
+}
+
+/* The search bar above the binder: exactly as wide as the binder, and
+   centered the same way, 4px below the top bar. (It's 38px tall, which
+   --top-gap counts.) */
+.searchRow {
+  width: var(--binder-width);
+  margin: 4px auto 0;
+}
+
 /* A pocket waiting for Scryfall to say which card picture was dropped on
    it: its dashed outline gently fades in and out until the card arrives */
 .pocket.dropLoading {
@@ -720,11 +753,11 @@
    NARROW WINDOWS (820px or less)
    The top bar moves the binder's name and save status to a second row,
    under "WUBRG'r", which makes the bar 93px tall instead of 60px. So the
-   space above the binder is 93 + 8 + 20 = 121px.
+   space above the binder is 93 + 8 + 42 (search bar) + 20 = 163px.
    Keep this 820px number the same as in TopBar.module.css.
    ===================================================================== */
 @media (max-width: 820px) {
-  .page { --top-gap: 121px; }
+  .page { --top-gap: 163px; }
 }
 
 /* =====================================================================
@@ -736,7 +769,7 @@
      + 18px of seams = 56px
    - width = 4 pockets + 18px seams + 16px page padding + 20px padding
      + 2px border = 4 pockets + 56px
-   (The top bar's second row, and so --top-gap of 114px, is set in
+   (The top bar's second row, and so --top-gap of 163px, is set in
    NARROW WINDOWS above.) Very small phones also allow a
    shorter binder (300px), so it still fits without scrolling.
    Keep this 640px number the same as PHONE_QUERY in BinderPage.tsx.

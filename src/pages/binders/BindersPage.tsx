@@ -17,6 +17,7 @@ import { useAnnouncer } from '../../hooks/useAnnouncer';
 import { useShortcutKeys } from '../../hooks/useShortcutKeys';
 import ShortcutsDialog, { type Shortcut } from '../../components/ShortcutsDialog';
 import NewBinderDialog, { type UploadedBinder } from '../../components/binders/NewBinderDialog';
+import BinderSearch from '../../components/binders/BinderSearch';
 import Shelf, { type ShelfHandle } from './Shelf';
 import { BinderPropertiesDialog, DeleteBinderDialog, type BinderChanges } from './BinderWindows';
 import {
@@ -319,6 +320,11 @@ export default function BindersPage() {
     <section className={styles.shelfArea} aria-labelledby="shelfTitle">
       {/* React puts this <title> in the page's <head>: the browser tab's name */}
       <title>My Binders – WUBRG'r</title>
+
+      {/* Search every card in every binder */}
+      <div className={styles.searchRow}>
+        <BinderSearch />
+      </div>
 
       <div className={styles.accountLine}>{account}</div>
       <h2 id="shelfTitle" className="visually-hidden">My binders</h2>

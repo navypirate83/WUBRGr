@@ -1,0 +1,141 @@
+/* =====================================================================
+   SEARCH YOUR BINDERS (the bar above the shelf and above each binder)
+   ===================================================================== */
+
+/* The bar: the search box, then (on a binder page) the "Current binder
+   only" checkbox beside it */
+.binderSearch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* The box and its button, with the results list placed under them
+   ("position: relative") */
+.field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+/* The search box: 38px tall, with room on the right for the button.
+   (The binder page counts on this height: see --top-gap in
+   pages/binder/BinderPage.module.css.) */
+.input {
+  width: 100%;
+  height: 38px;
+  padding: 0 44px 0 14px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  outline: none;
+}
+/* While typing in the box: accent-colored border plus a soft glow */
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+/* The browser's own little "×" in search boxes, hidden (Escape empties it) */
+.input::-webkit-search-cancel-button { display: none; }
+
+/* The search button: a magnifying glass inside the box's right end,
+   centered top to bottom */
+.searchButton {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.searchButton svg { width: 16px; height: 16px; }
+.searchButton:hover {
+  color: var(--accent);
+  background: var(--surface-hover);
+}
+
+/* The results: a list floating under the box, over the page, that
+   scrolls if it's long (never more than half the screen) */
+.results {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 50vh;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+/* One result: the card's name on the left, its binder and page on the
+   right */
+.results li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* The result under the mouse, or picked with the arrow keys */
+.results li:hover,
+.results li.active { background: var(--surface-hover); }
+
+/* The card's name (the letters matching what was typed are highlighted),
+   and "×3" when the pocket holds several copies */
+.resultName { min-width: 0; }
+.resultName mark { background: none; color: var(--accent); font-weight: 700; }
+.resultCount { color: var(--muted); font-size: 0.85rem; }
+
+/* "Red · page 3", small and grey, never split */
+.resultWhere {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* "No cards in your binders match." */
+.results li.noResults {
+  cursor: default;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.results li.noResults:hover { background: none; }
+
+/* "Current binder only": a checkbox and its words, never split.
+   "accent-color" colors the ticked box in the site's accent color. */
+.onlyThis {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.onlyThis input {
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}

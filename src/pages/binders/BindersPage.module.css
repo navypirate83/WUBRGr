@@ -15,6 +15,12 @@
   padding: 8px 16px 32px;
 }
 
+/* The search bar at the top: centered, no wider than 560px */
+.searchRow {
+  max-width: 560px;
+  margin: 4px auto 0;
+}
+
 /* "Signed in as …" above the binders (Sign out is in the footer) */
 .accountLine {
   min-height: 1.2em;
