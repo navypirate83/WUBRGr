@@ -2,8 +2,8 @@
    SEARCH YOUR BINDERS (the bar above the shelf and above each binder)
    ===================================================================== */
 
-/* The bar: the search box, then (on a binder page) the "Current binder
-   only" checkbox beside it */
+/* The bar: the search box, then (on a binder page) the "Current binder"
+   checkbox beside it */
 .binderSearch {
   display: flex;
   align-items: center;
@@ -122,7 +122,7 @@
 }
 .results li.noResults:hover { background: none; }
 
-/* "Current binder only": a checkbox and its words, never split.
+/* "Current binder": a checkbox and its words, never split.
    "accent-color" colors the ticked box in the site's accent color. */
 .onlyThis {
   display: inline-flex;

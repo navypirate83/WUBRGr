@@ -192,7 +192,7 @@ export const helpTopics: HelpTopic[] = [
                 goes to the top match.</li>
               <li>The binder opens at that page, with the card's pocket <strong>outlined and
                 glowing</strong>. The glow goes when you click or press a key in the binder.</li>
-              <li>Inside a binder, tick <strong>Current binder only</strong> to search just that
+              <li>Inside a binder, tick <strong>Current binder</strong> to search just that
                 binder. Unticked, it searches every binder.</li>
               <li><strong>Escape</strong> closes the list (press it again to empty the box).</li>
             </ul>
@@ -330,7 +330,7 @@ export const helpTopics: HelpTopic[] = [
               right page, with the card's pocket <strong>outlined and glowing</strong>.
             </p>
             <p>
-              It searches all your binders. Tick <strong>Current binder only</strong> to search
+              It searches all your binders. Tick <strong>Current binder</strong> to search
               just this one. (More in <HelpLink to="my-binders-search">Searching your binders</HelpLink>.)
             </p>
           </>

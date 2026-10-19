@@ -9,7 +9,7 @@
    page it's in. Picking one (a click, or Enter, or the search button,
    which picks the top one) opens that binder at that page, with the
    card's pocket highlighted.
-   On a binder page there's a "Current binder only" checkbox: ticked,
+   On a binder page there's a "Current binder" checkbox: ticked,
    only that binder is searched; otherwise every binder is.
    ===================================================================== */
 
@@ -61,7 +61,7 @@ function searchBinders(text: string, onlyBinderId: string | null): Found[] {
 }
 
 type Props = {
-  // On a binder page: that binder's id (for the "Current binder only" box)
+  // On a binder page: that binder's id (for the "Current binder" box)
   currentBinderId?: string;
 };
 
@@ -215,7 +215,7 @@ export default function BinderSearch({ currentBinderId }: Props) {
         )}
       </div>
 
-      {/* "Current binder only" (on a binder page): ticked, only this
+      {/* "Current binder" (on a binder page): ticked, only this
           binder is searched. Changing it searches again straight away. */}
       {currentBinderId && (
         <label className={styles.onlyThis}>
@@ -227,7 +227,7 @@ export default function BinderSearch({ currentBinderId }: Props) {
               if (results !== null) runSearch(text, event.target.checked ? currentBinderId : null);
             }}
           />
-          Current binder only
+          Current binder
         </label>
       )}
     </div>
