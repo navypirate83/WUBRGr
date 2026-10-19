@@ -1,20 +1,18 @@
 /* =====================================================================
    FOOTER: LINKS TO EVERY PAGE
    In the middle: "Home" (the welcome page), "Binders" (your shelf of
-   binders), the binder's name (on a binder page, and on the Search page
-   when it was opened from a binder), "Search" (the MTG Card Finder) and
-   "Help".
+   binders), "Search" (the MTG Card Finder) and "Help".
    At the far right: "Sign out", or "Sign in with Google" when using the
    site locally ("Sign in" on a phone).
-   "Binders", the binder's name and the sign in/out link only show to
-   someone using the binders (signed in, or using the site locally).
+   "Binders" and the sign in/out link only show to someone using the
+   binders (signed in, or using the site locally).
+   (On a binder page, the binder's name is in the top bar.)
    ===================================================================== */
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { NavLink, useLocation, useNavigate } from 'react-router';
 import { useAccount } from '../hooks/useAccount';
 import { initGoogleSignIn, signInWithGoogle, signOutAndForget, uploadLocalBinders } from '../lib/googleDrive';
-import { binderName } from '../lib/binderStorage';
 import styles from './Footer.module.css';
 
 // Which Help topic goes with the page you're on, so "Help" opens to the
@@ -29,16 +27,13 @@ function helpTopicFor(pathname: string): string {
 export default function Footer() {
   const { usingBinders, localMode } = useAccount();
   const { pathname } = useLocation();
-  const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  // On a binder page (/binders/<id>), its name is the page you're on, and
-  // the Search link carries the binder along ("?binder=<id>"), so "+"
-  // over there adds to it. The Search page opened from a binder has
-  // "?binder=<id>" in its address: then a link goes back to that binder.
+  // On a binder page (/binders/<id>), the Search link carries the binder
+  // along ("?binder=<id>"), so "+" over there adds to it. (The binder's
+  // name is shown in the top bar, not here.)
   const onBinder = /^\/binders\/([^/]+)/.exec(pathname);
   const thisBinder = onBinder ? decodeURIComponent(onBinder[1]) : null;
-  const fromBinder = thisBinder ?? (pathname.startsWith('/search') ? params.get('binder') : null);
   const searchTo = thisBinder ? `/search?binder=${encodeURIComponent(thisBinder)}` : '/search';
 
   // While signing in or out: the words the link shows instead
@@ -120,9 +115,6 @@ export default function Footer() {
               link only counts for its exact address. */}
           <li><NavLink to="/" end>Home</NavLink></li>
           {usingBinders && <li><NavLink to="/binders" end>Binders</NavLink></li>}
-          {usingBinders && fromBinder && (
-            <li><NavLink to={`/binders/${encodeURIComponent(fromBinder)}`}>{binderName(fromBinder)}</NavLink></li>
-          )}
           {/* (On the Search page itself, it's the current page) */}
           <li><NavLink to={searchTo}>Search</NavLink></li>
           {/* Help shows on every page, even before signing in */}

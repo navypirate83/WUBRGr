@@ -511,6 +511,25 @@
    THE TOP BAR'S MIDDLE: THE SAVE STATUS
    ===================================================================== */
 
+/* The binder's name, in the top bar: bold, one line. On the narrowest
+   phones a long name could run into the gear button, so it's cut off
+   with "…" there instead ("overflow: hidden" + "text-overflow"). */
+.binderName {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The save status and "Connect Drive" together, side by side */
+.statusGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+}
+
 /* "✓ Saved to Drive", "Saving…": muted grey, green once saved, red for a
    problem ("data-state" picks the color). Nothing to say: no space. */
 .syncStatus {
@@ -698,6 +717,17 @@
 }
 
 /* =====================================================================
+   NARROW WINDOWS (820px or less)
+   The top bar moves the binder's name and save status to a second row,
+   under "WUBRG'r", which makes the bar 93px tall instead of 60px. So the
+   space above the binder is 93 + 8 + 20 = 121px.
+   Keep this 820px number the same as in TopBar.module.css.
+   ===================================================================== */
+@media (max-width: 820px) {
+  .page { --top-gap: 121px; }
+}
+
+/* =====================================================================
    PHONES (640px or less)
    Two pages side by side would be tiny, so the binder shows ONE page at
    a time and the spine is hidden. The size math changes to match: 4
@@ -706,14 +736,13 @@
      + 18px of seams = 56px
    - width = 4 pockets + 18px seams + 16px page padding + 20px padding
      + 2px border = 4 pockets + 56px
-   The top bar has a second row on phones (the save status), which makes
-   it 86px tall, so --top-gap is 114px. Very small phones also allow a
+   (The top bar's second row, and so --top-gap of 114px, is set in
+   NARROW WINDOWS above.) Very small phones also allow a
    shorter binder (300px), so it still fits without scrolling.
    Keep this 640px number the same as PHONE_QUERY in BinderPage.tsx.
    ===================================================================== */
 @media (max-width: 640px) {
   .page {
-    --top-gap: 114px;
     --binder-height: max(300px, calc(100svh - var(--top-gap) - var(--bottom-space)));
     --binder-chrome: 56px;
     --binder-width: min(100%, calc(4 * var(--pocket-width) + 56px));

@@ -185,8 +185,6 @@ export const helpTopics: HelpTopic[] = [
                 binders</strong> link.</li>
               <li><strong>Binders</strong>: your shelf of binders (My Binders). Only shown when
                 you're signed in or using the site locally.</li>
-              <li>The <strong>binder's name</strong>: back to that binder (shown inside a
-                binder, and on the MTG Card Finder when you opened it from a binder).</li>
               <li><strong>Search</strong>: the MTG Card Finder, to look up any card.</li>
               <li><strong>Help</strong>: these instructions, opened to the page you were on.</li>
             </ul>
@@ -273,7 +271,8 @@ export const helpTopics: HelpTopic[] = [
       <>
         Opening a binder shows its pages, like a real binder lying open: two pages
         side by side on a computer or tablet, one page at a time on a phone. Each
-        page has 16 pockets, four across and four down.
+        page has 16 pockets, four across and four down. The binder's name is in the
+        top bar (under WUBRG'r on a narrow screen), with where it's saved.
       </>
     ),
     sections: [
@@ -549,7 +548,8 @@ export const helpTopics: HelpTopic[] = [
             <p>Either way, you're taken to the binder, opened to the page with the new card.</p>
             <p>
               The <strong>+</strong> button only shows when you're signed in or using the site
-              locally. When you came from a binder, a link back to it is at the bottom of the page.
+              locally. When you came from a binder, the round <strong>back arrow</strong> at the
+              top left (or the <strong>B</strong> key) takes you back to it.
               When you're not signed in, <strong>Home</strong> at the bottom goes back to the
               welcome page, where you can sign in.
             </p>

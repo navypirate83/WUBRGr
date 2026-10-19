@@ -845,22 +845,28 @@ function BinderPage({ binderId }: { binderId: string }) {
       {/* React puts this <title> in the page's <head>: the browser tab's name */}
       <title>{`${binder.name} – WUBRG'r`}</title>
 
-      {/* In the top bar: the save status ("✓ Saved to Drive", "Saving…"),
-          read out by screen readers as it changes, and "Connect Drive"
-          when the Google sign-in has run out */}
+      {/* In the middle of the top bar: the binder's name, then its save
+          status. (On narrow windows, the top bar moves both to a second
+          row, under "WUBRG'r".) The save
+          status is "✓ Saved to Drive", "Saving…" and so on, read out by
+          screen readers as it changes, with "Connect Drive" when the
+          Google sign-in has run out. */}
       {toolsBox && createPortal(
         <>
-          <span className={styles.syncStatus} data-state={status.state} aria-live="polite">{status.text}</span>
-          {status.state === 'signed-out' && (
-            <button className={styles.toolLink} type="button" onClick={connectDrive}>
-              {/* Cloud icon */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-                   strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 9.1 4.5 4.5 0 0 0 7 18z" />
-              </svg>
-              Connect Drive
-            </button>
-          )}
+          <h2 className={styles.binderName}>{binder.name}</h2>
+          <span className={styles.statusGroup}>
+            <span className={styles.syncStatus} data-state={status.state} aria-live="polite">{status.text}</span>
+            {status.state === 'signed-out' && (
+              <button className={styles.toolLink} type="button" onClick={connectDrive}>
+                {/* Cloud icon */}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+                     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 9.1 4.5 4.5 0 0 0 7 18z" />
+                </svg>
+                Connect Drive
+              </button>
+            )}
+          </span>
         </>,
         toolsBox,
       )}
