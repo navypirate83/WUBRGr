@@ -81,7 +81,8 @@ export function lookupFromDrop(dataTransfer: DataTransfer): { path: string; face
 
 // Turn Scryfall's card details into a binder card, the same way the MTG
 // Card Finder does: its name, set, number, side, language (if not
-// English), the pocket-sized picture, and foil if it ONLY comes in foil.
+// English), the pocket-sized picture, foil if it ONLY comes in foil, when
+// it's added (now), and the set's name and the card's rarity.
 export function binderCardFrom(card: ScryfallCard, wantedFace: number): BinderCard {
   const face = isDoubleSided(card) ? wantedFace : 0;
   return {
@@ -92,5 +93,7 @@ export function binderCardFrom(card: ScryfallCard, wantedFace: number): BinderCa
     lang: card.lang && card.lang !== 'en' ? card.lang : undefined,
     foil: foilChoices(card).onlyFoil ? true : undefined,
     image: imageFor(card, face, ['normal', 'large']) ?? CARD_BACK,
+    added: new Date().toISOString(),
+    extra: { 'Set name': card.set_name, ...(card.rarity && { Rarity: card.rarity }) },
   };
 }

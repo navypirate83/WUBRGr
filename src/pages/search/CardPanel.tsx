@@ -172,8 +172,10 @@ export default function CardPanel(props: Props) {
   /* ----- Adding the card to a binder ----- */
 
   // The card being shown, as a binder saves it: this exact set, version,
-  // side and language, whether it's foil, and the picture for the pocket
-  // (the smaller "normal" size is plenty, and downloads faster).
+  // side and language, whether it's foil, the picture for the pocket
+  // (the smaller "normal" size is plenty, and downloads faster), when
+  // it's added (now), and the set's name and the card's rarity (two of
+  // the binder file's columns: see binderCsv.ts).
   function cardEntry(): BinderCard {
     const side = isDoubleSided(print!) ? face : 0;
     return {
@@ -184,6 +186,8 @@ export default function CardPanel(props: Props) {
       lang: shown!.lang !== print!.lang ? shown!.lang : undefined,   // only saved if switched
       foil: foilOn ? true : undefined,                              // only saved if foil
       image: imageFor(shown!, side, ['normal', 'large']) ?? CARD_BACK,
+      added: new Date().toISOString(),
+      extra: { 'Set name': print!.set_name, ...(print!.rarity && { Rarity: print!.rarity }) },
     };
   }
 

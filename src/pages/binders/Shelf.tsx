@@ -450,8 +450,8 @@ function ShelfBinder({ binder, count, tabStop, faded, outlined, onDownload, regi
         className={styles.download}
         type="button"
         tabIndex={-1}
-        title={`Download ${binder.name} as .JSON`}
-        aria-label={`Download ${binder.name} as a .JSON file`}
+        title={`Download ${binder.name} as .CSV`}
+        aria-label={`Download ${binder.name} as a .CSV file`}
         onClick={onDownload}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"

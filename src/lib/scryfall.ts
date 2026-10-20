@@ -45,6 +45,7 @@ export type ScryfallCard = {
   set: string;
   set_name: string;
   collector_number: string;
+  rarity?: string;
   released_at: string;
   artist?: string;
   scryfall_uri: string;
@@ -199,6 +200,31 @@ export async function loadCard(path: string): Promise<{ card: ScryfallCard; prin
 // on a binder pocket).
 export function loadOneCard(path: string): Promise<ScryfallCard> {
   return scryfall<ScryfallCard>(path);
+}
+
+// Look up many exact printings at once, by set code and collector number
+// (used when an uploaded .csv file has cards without a Scryfall ID).
+// Scryfall's "collection" lookup takes up to 75 cards per request, so
+// the list is sent in batches of 75, with the usual polite gap between
+// requests. Returns a lookup from "set/number" (lowercase) to the card;
+// cards Scryfall doesn't know are just missing from it.
+export async function loadPrintings(wanted: { set: string; number: string }[]): Promise<Map<string, ScryfallCard>> {
+  const found = new Map<string, ScryfallCard>();
+  for (let start = 0; start < wanted.length; start += 75) {
+    const batch = wanted.slice(start, start + 75);
+    const wait = Math.max(0, lastRequestTime + REQUEST_GAP_MS - Date.now());
+    lastRequestTime = Date.now() + wait;
+    if (wait) await sleep(wait);
+    const response = await fetchOrExplain(`${API}/cards/collection`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifiers: batch.map((c) => ({ set: c.set, collector_number: c.number })) }),
+    }, 'Scryfall');
+    if (!response.ok) throw new RequestError(`Scryfall had a problem (error ${response.status}). Please try again in a moment.`);
+    const data: { data: ScryfallCard[] } = await response.json();
+    for (const card of data.data) found.set(`${card.set}/${card.collector_number}`.toLowerCase(), card);
+  }
+  return found;
 }
 
 // The official rulings for a card, oldest first (the order Scryfall sends)

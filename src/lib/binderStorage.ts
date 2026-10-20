@@ -23,11 +23,10 @@ import { accountChanged } from './accountEvents';
 // How many pockets on each page (4 x 4)
 export const POCKETS_PER_PAGE = 16;
 
-// How many pages a binder has: DEFAULT_PAGES for a new one, MAX_PAGES at
-// most (150 pages = 2,400 cards; much bigger binders would be slow to
-// open). A binder can't have fewer pages than its cards need.
+// How many pages a new binder has. There's no most: a binder can have as
+// many pages as it needs (an uploaded .csv file adds pages to fit all its
+// cards), but never fewer than its cards need.
 export const DEFAULT_PAGES = 10;
-export const MAX_PAGES = 150;
 
 // The longest a binder's name can be, so it fits on the cover's label
 export const NAME_LIMIT = 12;
@@ -35,7 +34,8 @@ export const NAME_LIMIT = 12;
 // The most copies of one card a pocket can say you own (two digits)
 export const MAX_COPIES = 99;
 
-// The name written into binder files, so we can recognize our own files
+// The name written into the older .json binder files (before binders
+// were saved as .csv files), so an uploaded one can be recognized
 export const FILE_APP_NAME = 'mtg-card-binder';
 
 // The names things are saved under in localStorage:
@@ -69,7 +69,9 @@ export type Binder = {
 // One card in a pocket: the exact printing ("set" + collector "number"),
 // which side ("face": 0 front, 1 back), the picture to show, and maybe a
 // language other than the printing's own, how many copies (when more
-// than 1), and whether it's a foil copy
+// than 1), whether it's a foil copy, when it was added (a date and time
+// like "2026-10-19T21:46:35.638Z"), and "extra": the binder file's other
+// columns, like the set's name, rarity or condition (see binderCsv.ts)
 export type BinderCard = {
   name: string;
   set: string;
@@ -79,6 +81,8 @@ export type BinderCard = {
   lang?: string;
   count?: number;
   foil?: boolean;
+  added?: string;
+  extra?: Record<string, string>;
 };
 
 // A binder's cards, by pocket: { "3-5": card, ... } (page 3, pocket 5)
@@ -173,11 +177,11 @@ export function pocketKey(page: number, slot: number): string {
 }
 
 // Turn any page count (a number, or text from a Drive label) into a safe
-// whole number from 1 to MAX_PAGES. Anything unreadable becomes DEFAULT_PAGES.
+// whole number, 1 or more. Anything unreadable becomes DEFAULT_PAGES.
 export function cleanPageCount(pages: unknown): number {
   const number = Math.round(Number(pages));
   if (!Number.isFinite(number) || number < 1) return DEFAULT_PAGES;
-  return Math.min(number, MAX_PAGES);
+  return number;
 }
 
 // The fewest pages that can hold this many cards (16 per page, at least 1)
@@ -312,20 +316,16 @@ export function freeBinderName(name: string): string {
   }
 }
 
-// The whole binder as it's written to a Google Drive file (or a .JSON
-// download): a label saying what it is, its name, cover symbol, cover
-// color, number of pages, when it was saved, and its cards.
-export function binderFileData(id: string) {
+// One binder's own details (name, cover symbol, cover color and pages),
+// tidied up: an unknown symbol is none, an unknown cover color is black.
+// Its cards and these go into its .csv file (see binderCsv.ts).
+export function binderDetails(id: string): Omit<Binder, 'id'> {
   const found = findBinder(id);
   return {
-    app: FILE_APP_NAME,
-    version: 1,
     name: binderName(id),
     color: found && manaColor(found.color) ? found.color : null,
     cover: cleanCover(found?.cover),
     pages: binderPages(id),
-    savedAt: new Date().toISOString(),
-    cards: loadBinder(id),
   };
 }
 
@@ -388,11 +388,14 @@ function isValidCard(card: unknown): card is BinderCard {
     (c.face === 0 || c.face === 1) &&
     (c.lang === undefined || typeof c.lang === 'string') &&
     (c.count === undefined || (Number.isInteger(c.count) && c.count >= 1)) &&
-    (c.foil === undefined || typeof c.foil === 'boolean');
+    (c.foil === undefined || typeof c.foil === 'boolean') &&
+    (c.added === undefined || typeof c.added === 'string') &&
+    (c.extra === undefined || (typeof c.extra === 'object' && c.extra !== null &&
+      Object.values(c.extra).every((value) => typeof value === 'string')));
 }
 
-// Keep only the valid cards in pockets that can exist (like "3-5", on any
-// page up to the 150-page limit). "skipped" counts what was thrown away.
+// Keep only the valid cards in pockets that can exist (like "3-5": any
+// page, pockets 1 to 16). "skipped" counts what was thrown away.
 export function cleanCards(incoming: unknown): { cards: BinderCards; skipped: number } {
   const cards: BinderCards = {};
   let skipped = 0;
@@ -401,15 +404,15 @@ export function cleanCards(incoming: unknown): { cards: BinderCards; skipped: nu
     const match = /^(\d+)-(\d+)$/.exec(key);
     const page = match ? Number(match[1]) : 0;
     const slot = match ? Number(match[2]) : 0;
-    const pocketExists = page >= 1 && page <= MAX_PAGES && slot >= 1 && slot <= POCKETS_PER_PAGE;
+    const pocketExists = page >= 1 && slot >= 1 && slot <= POCKETS_PER_PAGE;
     if (pocketExists && isValidCard(card)) cards[pocketKey(page, slot)] = card;
     else skipped++;
   }
   return { cards, skipped };
 }
 
-// Check a binder file's data (from "Upload .JSON") and pull out what the
-// new binder needs. Throws an error with a message to show if it isn't a
+// Check an older .json binder file's data (uploaded with "Upload file")
+// and pull out what the new binder needs. Throws an error with a message to show if it isn't a
 // binder file.
 export function binderFromFile(data: unknown): Omit<Binder, 'id'> & { cards: BinderCards; skipped: number } {
   const file = data as { app?: unknown; cards?: unknown; pages?: unknown; name?: unknown; color?: unknown; cover?: unknown };
@@ -421,9 +424,9 @@ export function binderFromFile(data: unknown): Omit<Binder, 'id'> & { cards: Bin
   const { cards, skipped } = cleanCards(file.cards);
   const count = Object.keys(cards).length;
   // Enough pages for the file's page count, for its cards, and for the
-  // highest page a card is on (never more than MAX_PAGES).
+  // highest page a card is on.
   const highestPage = Math.max(0, ...Object.keys(cards).map((key) => Number(key.split('-')[0])));
-  const pages = Math.min(MAX_PAGES, Math.max(cleanPageCount(file.pages), minPagesFor(count), highestPage));
+  const pages = Math.max(cleanPageCount(file.pages), minPagesFor(count), highestPage);
   const name = typeof file.name === 'string' && file.name.trim() ? file.name.trim() : nextBinderName();
   return {
     name: freeBinderName(name),

@@ -33,7 +33,7 @@ import Pocket from './Pocket';
 import BinderSearch from '../../components/binders/BinderSearch';
 import MoveCardDialog from './MoveCardDialog';
 import {
-  MAX_COPIES, MAX_PAGES, POCKETS_PER_PAGE,
+  MAX_COPIES, POCKETS_PER_PAGE,
   binderDirtyStamp, binderPages, cardCount, findBinder, isLocalMode, loadBinder, pocketKey, saveBinder,
   withCount, type BinderCards,
 } from '../../lib/binderStorage';
@@ -49,9 +49,10 @@ import styles from './BinderPage.module.css';
    SETTINGS
    --------------------------------------------------------------------- */
 
-// Card pictures only download for the pages showing, plus this many
-// pages either side (a full 150-page binder has 2,400 cards: downloading
-// every picture at once would be well over 100 MB)
+// Pages are only drawn (and their card pictures downloaded) for the
+// pages showing, plus this many pages either side (a 150-page binder has
+// 2,400 cards: downloading every picture at once would be well over
+// 100 MB, and drawing every pocket would make the page slow)
 const PICTURE_PAGES_AHEAD = 2;
 
 // A sideways finger slide this long (pixels) counts as a swipe
@@ -142,7 +143,7 @@ function BinderPage({ binderId }: { binderId: string }) {
   // highest page that has a card on it, so no card is ever out of sight.
   const [totalPages] = useState(() => {
     const highestUsed = Math.max(0, ...Object.keys(cards).map(pageOf));
-    return Math.min(Math.max(binderPages(binderId), highestUsed), MAX_PAGES);
+    return Math.max(binderPages(binderId), highestUsed);
   });
 
   // Keep a new set of cards: save it in this browser and show it.
@@ -987,9 +988,15 @@ function BinderPage({ binderId }: { binderId: string }) {
             </svg>
           </div>
 
-          {/* Every page (only the one or two showing are visible), each
-              with its 16 pockets */}
-          {range(1, totalPages).map((n) => (
+          {/* The pages near the ones showing (PICTURE_PAGES_AHEAD either
+              side), each with its 16 pockets. Only the one or two showing
+              are visible; the others are ready for a page turn. Pages
+              further away aren't drawn at all, so a binder with hundreds of
+              pages opens as fast as a small one. */}
+          {range(
+            Math.max(1, Math.min(...shown) - PICTURE_PAGES_AHEAD),
+            Math.min(totalPages, Math.max(...shown) + PICTURE_PAGES_AHEAD),
+          ).map((n) => (
             <div key={n} className={styles.binderPage} data-page-number={n} aria-label={`Page ${n}`} hidden={!shown.includes(n)}>
               {range(1, POCKETS_PER_PAGE).map((slot) => {
                 const key = pocketKey(n, slot);

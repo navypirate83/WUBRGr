@@ -8,8 +8,11 @@
      an hour) that lets this site talk to that person's Google Drive.
    - We only ask for the "drive.file" permission: this site can see and
      change ONLY the files it created itself, nothing else in their Drive.
-   - Each binder is one .json file inside a folder called "MTG Card
-     Binder" in their Drive. The file's Drive id is also the binder's id.
+   - Each binder is one .csv file (a spreadsheet-style card list: see
+     binderCsv.ts) inside a folder called "MTG Card Binder" in their
+     Drive. The file's Drive id is also the binder's id. Binders saved
+     before were .json files: those are turned into .csv files (see
+     convertOldBinderFiles), and a backup copy of the .json is kept.
    - The access token is kept in sessionStorage, which is wiped when the
      browser tab closes, so the pass doesn't stay on the computer.
    - LOCAL USE ONLY: the functions below that would change Drive (make,
@@ -21,11 +24,12 @@
 import { fetchOrExplain } from './http';
 import { accountChanged } from './accountEvents';
 import {
-  DEFAULT_COVER, DEFAULT_PAGES, FILE_APP_NAME,
-  binderDirtyStamp, binderFileData, binderPages, cleanCards, cleanCover, clearAllBinders,
-  forgetBinder, isLocalMode, loadBinder, loadBinderList, markBinderSaved, newLocalBinderId,
-  saveBinder, setLocalMode, type BinderCards,
+  DEFAULT_COVER, DEFAULT_PAGES,
+  binderDetails, binderDirtyStamp, binderPages, cleanCards, cleanCover, cleanPageCount, clearAllBinders,
+  forgetBinder, isLocalMode, loadBinder, loadBinderList, manaColor, markBinderSaved, newLocalBinderId,
+  saveBinder, setLocalMode, type Binder, type BinderCards,
 } from './binderStorage';
+import { binderToCsv, cardsFromCsv } from './binderCsv';
 
 // The site's Google Client ID: it tells Google which site is asking to
 // sign in (it comes from Google Cloud Console, and isn't a secret).
@@ -300,17 +304,42 @@ async function getBinderFolderId(): Promise<string> {
   return folderId;
 }
 
-// One binder file in Drive: its id, its file name ("Binder 1.json"), and
+// One binder file in Drive: its id, its file name ("Binder 1.csv"), and
 // the small labels this site stores on it, like { color: "U", pages:
-// "10", order: "2" } (see createBinderFile and updateBinderDetails)
+// "10", order: "2" } (see createBinderFile and updateBinderDetails).
+// The labels let the shelf show every binder's cover and order without
+// opening every file.
 export type BinderFile = { id: string; name: string; appProperties?: Record<string, string> };
 
-// List the binder files in the folder, oldest first. Drive hands lists
-// back in batches (up to 1000 files each) with a "nextPageToken" when
-// there are more, so keep asking until there's none.
-export async function listBinderFiles(): Promise<BinderFile[]> {
-  const folderId = await getBinderFolderId();
-  const query = `'${folderId}' in parents and mimeType='application/json' and trashed=false`;
+// The file type Drive is told a binder file is (a .csv file)
+const CSV_TYPE = 'text/csv';
+
+// The label put on the backup copy of an old .json binder, so it's never
+// turned into a .csv file itself: { wubrgr: "backup", backupOf: <the
+// binder's id> }
+const BACKUP_LABEL = 'backup';
+
+// A file's details and its contents together in one "multipart" message
+// (how Drive takes both at once): two parts separated by a "boundary"
+// line that appears nowhere else. Returns what to send: the body, and
+// the header saying where the boundary is.
+function multipart(details: Record<string, unknown>, contentType: string, contents: string) {
+  const boundary = `wubrgr-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return {
+    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body:
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
+      `${JSON.stringify(details)}\r\n` +
+      `--${boundary}\r\nContent-Type: ${contentType}; charset=UTF-8\r\n\r\n` +
+      `${contents}\r\n` +
+      `--${boundary}--`,
+  };
+}
+
+// Every file in the folder that matches a Drive search, oldest first.
+// Drive hands lists back in batches (up to 1000 files each) with a
+// "nextPageToken" when there are more, so keep asking until there's none.
+async function listFiles(query: string): Promise<BinderFile[]> {
   const files: BinderFile[] = [];
   let pageToken = '';
   do {
@@ -325,24 +354,83 @@ export async function listBinderFiles(): Promise<BinderFile[]> {
   return files;
 }
 
-// Read one binder file's contents. A file that isn't readable JSON
-// (edited by hand, or damaged) gets a clear message instead of a
-// confusing "Unexpected token" one.
-async function readBinderFile(fileId: string): Promise<{ cards?: unknown }> {
+// Turn the binders saved before as .json files into .csv files. For each
+// old binder file (once):
+//  1. make a backup copy of it, still a .json file, labeled as a backup
+//     (the original card-binder site can still open these copies)
+//  2. replace the file's contents with the same binder as a .csv file,
+//     and rename it ("Binder 1.json" → "Binder 1.csv")
+// The binder keeps the same file, so its id (and links to it), labels and
+// shelf position stay the same. A file that can't be read is left alone.
+async function convertOldBinderFiles(folderId: string): Promise<void> {
+  const oldFiles = await listFiles(`'${folderId}' in parents and mimeType='application/json' and trashed=false`);
+  const isBackup = (file: BinderFile) => file.appProperties?.wubrgr === BACKUP_LABEL;
+  // The binders that already have a backup copy (if a change was cut off
+  // part way, trying again doesn't make a second copy)
+  const backedUp = new Set(oldFiles.filter(isBackup).map((file) => file.appProperties?.backupOf));
+
+  for (const file of oldFiles.filter((f) => !isBackup(f))) {
+    let data: { cards?: unknown };
+    try {
+      const response = await driveRequest(`${DRIVE_API}/files/${encodeURIComponent(file.id)}?alt=media`);
+      data = await response.json();
+    } catch (err) {
+      if ((err as DriveError).signedOut) throw err;
+      continue;   // unreadable: leave this one as it is
+    }
+
+    // 1. The backup copy (keeping the same name)
+    if (!backedUp.has(file.id)) {
+      await driveRequest(`${DRIVE_API}/files/${encodeURIComponent(file.id)}/copy?fields=id`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: file.name, parents: [folderId], appProperties: { wubrgr: BACKUP_LABEL, backupOf: file.id } }),
+      });
+    }
+
+    // 2. The same binder as a .csv file: its cards, and its name, cover
+    //    and pages (from the file's name and labels)
+    const labels = file.appProperties ?? {};
+    const details: Omit<Binder, 'id'> = {
+      name: nameFromFileName(file.name),
+      color: manaColor(labels.color) ? labels.color : null,
+      cover: cleanCover(labels.cover),
+      pages: cleanPageCount(labels.pages),
+    };
+    const { cards } = cleanCards(data?.cards);
+    await driveRequest(`${DRIVE_UPLOAD_API}/files/${encodeURIComponent(file.id)}?uploadType=multipart`, {
+      method: 'PATCH',
+      ...multipart({ name: `${details.name}.csv`, mimeType: CSV_TYPE }, CSV_TYPE, binderToCsv(details, cards)),
+    });
+  }
+}
+
+// List the binder files in the folder, oldest first (after turning any
+// old .json binder files into .csv ones).
+export async function listBinderFiles(): Promise<BinderFile[]> {
+  const folderId = await getBinderFolderId();
+  await convertOldBinderFiles(folderId);
+  return listFiles(`'${folderId}' in parents and mimeType='${CSV_TYPE}' and trashed=false`);
+}
+
+// Read one binder file's cards. A file that can't be read (damaged)
+// gets a clear message instead of a confusing one.
+async function readBinderFile(fileId: string): Promise<BinderCards> {
   const response = await driveRequest(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`);
   try {
-    return await response.json();
+    return cardsFromCsv(await response.text());
   } catch {
     throw new DriveError('This binder\'s file in Google Drive can\'t be read. It may have been edited or damaged.');
   }
 }
 
-// Replace one binder file's contents with new binder data.
-async function writeBinderFile(fileId: string, data: unknown): Promise<void> {
+// Replace one binder file's contents with the binder as it is in this
+// browser: its cards, name, cover and pages, as a .csv file.
+async function writeBinderFile(fileId: string): Promise<void> {
   await driveRequest(`${DRIVE_UPLOAD_API}/files/${encodeURIComponent(fileId)}?uploadType=media`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data, null, 2),
+    headers: { 'Content-Type': `${CSV_TYPE}; charset=UTF-8` },
+    body: binderToCsv(binderDetails(fileId), loadBinder(fileId)),
   });
 }
 
@@ -352,9 +440,6 @@ async function writeBinderFile(fileId: string, data: unknown): Promise<void> {
 // file, so the shelf can show them without opening every binder.
 // Local use only: nothing goes to Drive; the binder just gets a new
 // "local-..." id.
-// A new file needs its details (name, folder) and its contents sent
-// together: Drive takes both in one "multipart" message, two parts
-// separated by a "boundary" line that appears nowhere else.
 export async function createBinderFile(
   name: string,
   cards: BinderCards = {},
@@ -365,34 +450,29 @@ export async function createBinderFile(
 ): Promise<{ id: string }> {
   if (isLocalMode()) return { id: newLocalBinderId() };
   const folderId = await getBinderFolderId();
-  const boundary = `binder-${Date.now()}`;
-  const data = { app: FILE_APP_NAME, version: 1, name, color, cover, pages, cards };
-  const details: Record<string, unknown> = { name: `${name}.json`, mimeType: 'application/json', parents: [folderId] };
+  const details: Record<string, unknown> = { name: `${name}.csv`, mimeType: CSV_TYPE, parents: [folderId] };
   const labels: Record<string, string> = {};
   if (color) labels.color = color;
   if (cover !== DEFAULT_COVER) labels.cover = cover;           // black is the default: no label needed
   if (pages !== DEFAULT_PAGES) labels.pages = String(pages);   // (and so is DEFAULT_PAGES)
   if (order !== null) labels.order = String(order);
   if (Object.keys(labels).length) details.appProperties = labels;
-  const body =
-    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
-    `${JSON.stringify(details)}\r\n` +
-    `--${boundary}\r\nContent-Type: application/json\r\n\r\n` +
-    `${JSON.stringify(data, null, 2)}\r\n` +
-    `--${boundary}--`;
   const response = await driveRequest(`${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=id,name`, {
     method: 'POST',
-    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-    body,
+    ...multipart(details, CSV_TYPE, binderToCsv({ name, color, cover, pages }, cards)),
   });
   return response.json();
 }
 
 // Change a binder file's details. Only the details passed in change:
-//   { name: "Modern Decks" }  renames it (the file becomes "Modern Decks.json")
+//   { name: "Modern Decks" }  renames it (the file becomes "Modern Decks.csv")
 //   { color: "R" } / { color: null }  sets or removes the cover symbol
 //   { cover: "gold" }  the cover's color     { pages: 20 }  its pages
 //   { order: 3 }  its spot on the shelf (0 = first)
+// The name, cover and pages are also written in the .csv file itself, so
+// changing one of those rewrites the file too. It first brings the
+// binder up to date (so cards added on another computer aren't lost).
+// The page must already have saved the change in the binder list.
 // (Local use only: nothing to do; the page has already saved the change.)
 export async function updateBinderDetails(
   fileId: string,
@@ -401,16 +481,29 @@ export async function updateBinderDetails(
   if (isLocalMode()) return;
   const details: Record<string, unknown> = {};
   const labels: Record<string, string | null> = {};
-  if (name !== undefined) details.name = `${name}.json`;
+  if (name !== undefined) details.name = `${name}.csv`;
   if (color !== undefined) labels.color = color;            // null removes the label
   if (cover !== undefined) labels.cover = cover;
   if (pages !== undefined) labels.pages = String(pages);    // labels are always text
   if (order !== undefined) labels.order = String(order);
   if (Object.keys(labels).length) details.appProperties = labels;
-  await driveRequest(`${DRIVE_API}/files/${encodeURIComponent(fileId)}`, {
+
+  // Only the shelf position changed: just the labels
+  if (name === undefined && color === undefined && cover === undefined && pages === undefined) {
+    await driveRequest(`${DRIVE_API}/files/${encodeURIComponent(fileId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(details),
+    });
+    return;
+  }
+  // Otherwise the labels and the file's contents, together
+  await syncBinder(fileId);
+  const binder = { ...binderDetails(fileId), ...(name !== undefined && { name }),
+    ...(color !== undefined && { color }), ...(cover !== undefined && { cover }), ...(pages !== undefined && { pages }) };
+  await driveRequest(`${DRIVE_UPLOAD_API}/files/${encodeURIComponent(fileId)}?uploadType=multipart`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(details),
+    ...multipart(details, CSV_TYPE, binderToCsv(binder, loadBinder(fileId))),
   });
 }
 
@@ -430,8 +523,9 @@ export async function trashBinderFile(fileId: string): Promise<void> {
    The site's settings (see settings.ts) are kept in one file in the same
    "MTG Card Binder" folder as the binders. It's a .json file, but it's
    stored in Drive as plain text ("text/plain"): the binder list only
-   picks up files stored as JSON, so the settings file never shows up as
-   a binder, here or on the original site (which shares the folder).
+   picks up .csv files (and the original site, which shares the folder,
+   only files stored as JSON), so the settings file never shows up as a
+   binder, here or there.
    --------------------------------------------------------------------- */
 
 // The settings file's name, and where its Drive id is remembered for this tab
@@ -498,9 +592,10 @@ export async function writeSettingsFile(data: Record<string, unknown>): Promise<
   try { sessionStorage.setItem(SETTINGS_ID_KEY, created.id); } catch { /* fine */ }
 }
 
-// The binder's display name from its file name ("Binder 1.json" → "Binder 1")
+// The binder's display name from its file name ("Binder 1.csv" → "Binder 1",
+// and the same for an old "Binder 1.json")
 export function nameFromFileName(fileName: string): string {
-  return fileName.replace(/\.json$/i, '');
+  return fileName.replace(/\.(csv|json)$/i, '');
 }
 
 // Bring one binder up to date between this browser and Google Drive:
@@ -513,12 +608,11 @@ export async function syncBinder(id: string): Promise<BinderCards> {
   if (isLocalMode()) return loadBinder(id);
   const stamp = binderDirtyStamp(id);
   if (stamp) {
-    await writeBinderFile(id, binderFileData(id));
+    await writeBinderFile(id);
     markBinderSaved(id, stamp);
     return loadBinder(id);
   }
-  const data = await readBinderFile(id);
-  const { cards } = cleanCards(data?.cards);
+  const cards = await readBinderFile(id);
   saveBinder(cards, id, { dirty: false });
   return cards;
 }

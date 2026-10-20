@@ -80,7 +80,7 @@
 }
 
 /* The Pages row: a small number box with a note beside it explaining the
-   limits ("Holds 160 cards · 3 to 150 pages"). The note wraps under the
+   limit ("Holds 160 cards · at least 3 pages"). The note wraps under the
    box on a narrow phone. */
 .pagesField {
   display: flex;

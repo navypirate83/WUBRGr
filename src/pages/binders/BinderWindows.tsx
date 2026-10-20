@@ -13,7 +13,7 @@ import { useRef, useState } from 'react';
 import Modal from '../../components/Modal';
 import { CoverChoices, NameField, SymbolChoices } from '../../components/binders/BinderChoices';
 import {
-  MAX_PAGES, NAME_LIMIT, POCKETS_PER_PAGE, cardCountText, cleanCover, minPagesFor, type Binder,
+  NAME_LIMIT, POCKETS_PER_PAGE, cardCountText, cleanCover, minPagesFor, type Binder,
 } from '../../lib/binderStorage';
 import styles from '../../components/binders/BinderWindows.module.css';
 
@@ -37,27 +37,26 @@ export function BinderPropertiesDialog({ binder, cardCount, onSave, onCancel }: 
   const [cover, setCover] = useState(cleanCover(binder.cover));
   const nameRef = useRef<HTMLInputElement>(null);
 
-  // The Pages box can't go below the fewest pages its cards need, or
-  // above the 150-page limit. The browser won't let Save go ahead with
-  // a number outside them (the box's "min" and "max").
+  // The Pages box can't go below the fewest pages its cards need (there's
+  // no most). The browser won't let Save go ahead with a smaller number
+  // (the box's "min").
   const min = minPagesFor(cardCount);
   const pages = Number(pagesText);
-  const ok = Number.isInteger(pages) && pages >= min && pages <= MAX_PAGES;
+  const ok = Number.isInteger(pages) && pages >= min;
   // The note beside the box: how many cards that many pages hold, and
-  // the allowed range, or (in red) why the number isn't allowed
-  const range = `${min} to ${MAX_PAGES} pages`;
+  // the fewest allowed, or (in red) why the number isn't allowed
+  const range = `at least ${min} page${min === 1 ? '' : 's'}`;
   const note = !Number.isInteger(pages) || pages < 1 ? `Enter a number (${range}).`
-    : pages < min ? `Too few: its cards need at least ${min} page${min === 1 ? '' : 's'}.`
-      : pages > MAX_PAGES ? `Too many: the most is ${MAX_PAGES} pages.`
-        : `Holds ${pages * POCKETS_PER_PAGE} cards · ${range}`;
+    : pages < min ? `Too few: its cards need ${range}.`
+      : `Holds ${(pages * POCKETS_PER_PAGE).toLocaleString()} cards · ${range}`;
 
   // When the window closes with "Save", hand the changes to the page.
-  // (A blank name or an out-of-range page count can't get here: the
-  // boxes are "required" with limits, so the browser stops Save.)
+  // (A blank name or too few pages can't get here: the boxes are
+  // "required" with limits, so the browser stops Save.)
   function handleClose(returnValue: string) {
     const trimmed = name.trim().slice(0, NAME_LIMIT);
     if (returnValue === 'save' && trimmed) {
-      onSave({ name: trimmed, color: symbol || null, cover, pages: Math.max(min, Math.min(MAX_PAGES, Math.round(pages))) });
+      onSave({ name: trimmed, color: symbol || null, cover, pages: Math.max(min, Math.round(pages)) });
     } else {
       onCancel();
     }
@@ -79,7 +78,6 @@ export function BinderPropertiesDialog({ binder, cardCount, onSave, onCancel }: 
             type="number"
             step={1}
             min={min}
-            max={MAX_PAGES}
             inputMode="numeric"
             required
             aria-describedby="pagesNote"

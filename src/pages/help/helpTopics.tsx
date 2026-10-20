@@ -57,8 +57,9 @@ export const helpTopics: HelpTopic[] = [
             </p>
             <ul>
               <li><strong>Sign in with Google</strong> to save your binders in your own
-                Google Drive (in a folder called "MTG Card Binder"). You can then open
-                them on any computer or phone by signing in there.</li>
+                Google Drive (in a folder called "MTG Card Binder", one .CSV file per
+                binder: see <HelpLink to="my-binders-backup">Binder files</HelpLink>). You
+                can then open them on any computer or phone by signing in there.</li>
               <li><strong>Skip login, local use only</strong> to start right away without
                 an account. Your binders are saved on this device only. You can sign in
                 later, and your binders will be copied to Google Drive then.</li>
@@ -89,8 +90,9 @@ export const helpTopics: HelpTopic[] = [
             </ol>
             <p>New binders have 10 pages of 16 pockets (160 cards). There's no limit on how many binders you can make.</p>
             <p>
-              To bring back a binder you saved as a file, use <strong>Upload .JSON</strong> in
-              the same window (see <HelpLink to="my-binders-backup">Backing up a binder</HelpLink>).
+              To bring back a binder you saved as a file, or make one from a ManaBox card
+              list, use <strong>Upload .CSV</strong> in the same window
+              (see <HelpLink to="my-binders-backup">Binder files</HelpLink>).
             </p>
           </>
         ),
@@ -121,7 +123,7 @@ export const helpTopics: HelpTopic[] = [
             </p>
             <ul>
               <li>its <strong>name</strong>,</li>
-              <li>how many <strong>pages</strong> it has (up to 150). It can't be made smaller
+              <li>how many <strong>pages</strong> it has (as many as you like). It can't be made smaller
                 than the pages its cards need; cards on pages that go away are moved into
                 empty pockets on the pages that stay,</li>
               <li>its <strong>cover symbol</strong> and <strong>cover color</strong>.</li>
@@ -150,26 +152,49 @@ export const helpTopics: HelpTopic[] = [
       },
       {
         id: 'my-binders-backup',
-        title: 'Backing up a binder',
+        title: 'Binder files',
         body: (
           <>
             <p>
-              You can save any binder as a <strong>.JSON file</strong> (a small text file) to keep
-              as a backup, or to share with a friend.
+              Each binder is saved as a <strong>.CSV file</strong>: a simple table of its cards
+              that spreadsheet programs (like Excel or Google Sheets) can open. It uses the
+              same columns as a <strong>ManaBox</strong> collection export (except ManaBox ID,
+              Misprint, Altered and Signed), so ManaBox can import it. Each line is one card, with its name, set, collector number, foil,
+              how many copies, language and the date it was added. After those come:
             </p>
             <ul>
+              <li><strong>Page</strong> and <strong>Pocket</strong>: where the card is in the binder.</li>
+              <li><strong>Side</strong>: which side of a two-sided card faces out.</li>
+              <li><strong>Binder</strong>, <strong>Cover symbol</strong>, <strong>Cover
+                color</strong> and <strong>Pages</strong>: the binder's own name, cover and
+                size (the same on every line).</li>
+            </ul>
+            <p>You can also save a binder to your computer, to keep as a backup or share with a friend:</p>
+            <ul>
               <li><strong>Download</strong>: click the small <strong>down arrow</strong> at the
-                right end of the line under a binder (beside its card count). The file holds
-                the binder's name, cover symbol, cover color, pages and every card, with how
-                many copies of each and which ones are foil.</li>
+                right end of the line under a binder (beside its card count).</li>
               <li><strong>Upload</strong>: click the <strong>+</strong> binder,
-                then <strong>Upload .JSON</strong> at the bottom left of the New binder window, and
-                pick a binder file. It's added to the end of your shelf as a new binder, just
-                as it was saved. If you already have a binder with that name, the new one is
-                called "Name (1)", then "Name (2)", and so on. (Names can be up to 12
+                then <strong>Upload .CSV</strong> at the bottom left of the New binder window, and
+                pick a file. It's added to the end of your shelf as a new binder, with every card
+                in the pocket it was saved in. If the file has more cards than the binder's pages
+                hold, pages are added until they all fit. If you already have a binder with that name, the
+                new one is called "Name (1)", then "Name (2)", and so on. (Names can be up to 12
                 characters, so a long name is shortened to make room for the number, like
                 "Planeswa (1)". You can rename it in Binder properties.)</li>
             </ul>
+            <p>
+              <strong>From ManaBox</strong>: export a collection or binder as a .CSV in ManaBox,
+              then upload it here. Its cards fill the pockets in the order they're listed (10
+              pages to start, with more added if it needs them), and the binder is named after
+              the file. Details WUBRG'r doesn't show (like condition or
+              purchase price) are kept, so they're still there when you download it again.
+              Older WUBRG'r <strong>.JSON</strong> binder files can be uploaded too.
+            </p>
+            <p>
+              Binders saved before were .JSON files. The first time you open My Binders, each
+              one is turned into a .CSV file. A backup copy of the old .JSON file is kept in the
+              same Google Drive folder.
+            </p>
           </>
         ),
       },
@@ -260,7 +285,7 @@ export const helpTopics: HelpTopic[] = [
               <li><strong>Enter</strong>: open the binder (on the <strong>+</strong>, make a new binder).</li>
               <li><strong>E</strong>: Binder properties (rename, pages, cover).</li>
               <li><strong>Delete</strong>: delete the binder (it asks first).</li>
-              <li><strong>D</strong>: download the binder as a .JSON file.</li>
+              <li><strong>D</strong>: download the binder as a .CSV file.</li>
               <li><strong>N</strong>: make a new binder.</li>
             </ul>
             <p>To change the order of your binders:</p>
@@ -461,7 +486,7 @@ export const helpTopics: HelpTopic[] = [
             </p>
             <p>
               To keep your own copy of a binder as a file, use the download button under it
-              on My Binders (see <HelpLink to="my-binders-backup">Backing up a binder</HelpLink>).
+              on My Binders, as a .CSV file (see <HelpLink to="my-binders-backup">Binder files</HelpLink>).
             </p>
           </>
         ),

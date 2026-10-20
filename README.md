@@ -9,14 +9,20 @@ save everything to your own Google Drive (or just on your device).
 This repository is the **React rewrite** of the original app,
 [card-binder](https://github.com/navypirate83/card-binder)
 ([live site](https://navypirate83.github.io/card-binder/)), which was
-built with plain HTML, CSS and JavaScript. Binders are saved under the
-same names as the original site (in Google Drive and in the browser), so
-the two sites share them.
+built with plain HTML, CSS and JavaScript. Both use the same Google Drive
+folder, but WUBRG'r saves each binder as a `.csv` file, and the original
+saved `.json` files. The first time WUBRG'r opens a Drive folder, it
+turns each old `.json` binder into a `.csv` one, and keeps a backup copy
+of the `.json` (which the original site can still open).
 
 ## What it does
 
 - **My Binders**: a shelf of binders with colored covers and Magic
-  symbols. Make, rename, reorder, delete, download and upload them.
+  symbols. Make, rename, reorder, delete, download and upload them, and
+  search the cards in them. Binders are `.csv` files in the same layout
+  as a ManaBox export (plus each card's page and pocket, and the binder's
+  name, cover and pages), so ManaBox lists can be uploaded and binders
+  imported into ManaBox.
 - **Binder pages**: pockets of cards that turn like a real binder, with
   copy counts, foil borders, dragging cards between pockets and binders,
   and dropping card pictures in from Scryfall or EDHREC.
@@ -50,7 +56,7 @@ the two sites share them.
 - `src/hooks/`: shared page behavior (shortcut keys, messages read out
   to screen readers, who's signed in, settings).
 - `src/lib/`: plain TypeScript with no React (Google sign-in and Drive,
-  binder storage, cover colors, talking to Scryfall, the card-name
+  binder storage, binder `.csv` files, cover colors, talking to Scryfall, the card-name
   search, card helpers, prices, the page-turn animation, card pictures
   dropped from other websites, settings, light/dark theme), to share
   with a future phone app.

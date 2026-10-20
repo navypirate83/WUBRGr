@@ -5,8 +5,9 @@
    Used by My Binders (the "+" binder) and the Search page ("New binder"
    in the "Add to which binder?" menu). The page decides what happens
    when "Create binder" is clicked.
-   On My Binders it also has "Upload .JSON": make the binder from a
-   binder file downloaded earlier.
+   On My Binders it also has "Upload .CSV": make the binder from a
+   binder file downloaded earlier, or a card list exported from ManaBox
+   (or a similar app). An older .json binder file works too.
    ===================================================================== */
 
 import { useRef, useState, type ChangeEvent } from 'react';
@@ -15,9 +16,10 @@ import { NameField, SymbolChoices, CoverChoices } from './BinderChoices';
 import {
   DEFAULT_COVER, NAME_LIMIT, binderFromFile, nextBinderName, type BinderCards,
 } from '../../lib/binderStorage';
+import { binderFromCsv } from '../../lib/binderCsv';
 import styles from './BinderWindows.module.css';
 
-// What an uploaded binder file turns into (see binderFromFile)
+// What an uploaded binder file turns into (see binderFromCsv and binderFromFile)
 export type UploadedBinder = ReturnType<typeof binderFromFile> & { cards: BinderCards };
 
 type Props = {
@@ -25,7 +27,7 @@ type Props = {
   onCreate: (name: string, color: string | null, cover: string) => void;
   // The window closed without making a binder
   onCancel: () => void;
-  // Given on My Binders only: adds the "Upload .JSON" button
+  // Given on My Binders only: adds the "Upload .CSV" button
   onUpload?: (binder: UploadedBinder) => void;
 };
 
@@ -37,8 +39,11 @@ export default function NewBinderDialog({ onCreate, onCancel, onUpload }: Props)
   const [cover, setCover] = useState(DEFAULT_COVER);
   const nameRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  // The binder from an uploaded file, once one has been picked
+  // The binder from an uploaded file, once one has been picked, and
+  // whether a file is being read right now (cards without a Scryfall ID
+  // are looked up on Scryfall, which can take a few seconds)
   const uploaded = useRef<UploadedBinder | null>(null);
+  const [reading, setReading] = useState(false);
 
   // When the window closes, see which button closed it. "Create binder"
   // hands the name, symbol and cover color to the page. (The name box is
@@ -54,19 +59,26 @@ export default function NewBinderDialog({ onCreate, onCancel, onUpload }: Props)
     }
   }
 
-  // A file was picked with "Upload .JSON": read it and check it. If it's
-  // a binder file, close the window and hand it to the page; if not, say
-  // why and leave the window open.
+  // A file was picked with "Upload .CSV": read it and check it. A .json
+  // file (or one that starts with "{") is an older binder file; anything
+  // else is read as a .csv card list. If it's a binder, close the window
+  // and hand it to the page; if not, say why and leave the window open.
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
     const chosen = input.files?.[0];
     input.value = '';     // so picking the same file again still works
     if (!chosen) return;  // the picker was closed without a file
+    setReading(true);
     try {
-      uploaded.current = binderFromFile(JSON.parse(await chosen.text()));
+      const text = await chosen.text();
+      uploaded.current = /\.json$/i.test(chosen.name) || text.trimStart().startsWith('{')
+        ? binderFromFile(JSON.parse(text))
+        : await binderFromCsv(text, chosen.name);
     } catch (err) {
-      alert(err instanceof SyntaxError ? 'That file isn\'t a readable .JSON file.' : (err as Error).message);
+      alert(err instanceof SyntaxError ? 'That file isn\'t a readable binder file.' : (err as Error).message);
       return;
+    } finally {
+      setReading(false);
     }
     input.closest('dialog')?.close('upload');
   }
@@ -86,8 +98,9 @@ export default function NewBinderDialog({ onCreate, onCancel, onUpload }: Props)
         <CoverChoices group="binderCover" value={cover} onChange={setCover} />
 
         {/* "Create binder" comes first so Enter creates the binder; they
-            show in reverse: Upload .JSON (far left), Cancel, Create binder.
-            formNoValidate: Cancel works even if the name box is empty. */}
+            show in reverse: Upload .CSV (far left), Cancel, Create binder.
+            formNoValidate: Cancel works even if the name box is empty.
+            While a file is being read, the upload button says so. */}
         <div className={styles.buttons}>
           <button value="create" className={`${styles.button} ${styles.primary}`} type="submit">Create binder</button>
           <button value="cancel" className={styles.button} type="submit" formNoValidate>Cancel</button>
@@ -95,14 +108,18 @@ export default function NewBinderDialog({ onCreate, onCancel, onUpload }: Props)
             <button
               className={`${styles.button} ${styles.uploadButton}`}
               type="button"
+              disabled={reading}
               onClick={() => fileRef.current?.click()}
             >
-              Upload .JSON
+              {reading ? 'Reading…' : 'Upload .CSV'}
             </button>
           )}
         </div>
-        {/* The file picker, hidden: the Upload .JSON button opens it */}
-        {onUpload && <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={handleFile} />}
+        {/* The file picker, hidden: the Upload .CSV button opens it. It
+            takes .csv files, and older .json binder files. */}
+        {onUpload && (
+          <input ref={fileRef} type="file" accept=".csv,text/csv,.json,application/json" hidden onChange={handleFile} />
+        )}
       </form>
     </Modal>
   );

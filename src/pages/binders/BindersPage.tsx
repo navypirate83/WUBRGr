@@ -22,10 +22,11 @@ import Shelf, { type ShelfHandle } from './Shelf';
 import { BinderPropertiesDialog, DeleteBinderDialog, type BinderChanges } from './BinderWindows';
 import {
   DEFAULT_COVER, DEFAULT_PAGES, OLD_SINGLE_BINDER_KEY,
-  binderCardCount, binderFileData, binderPages, cardCountText, cleanCards, cleanCover, cleanPageCount,
-  fitCardsIntoPages, forgetBinder, loadBinderList, manaColor, minPagesFor, saveBinder, saveBinderList,
+  binderCardCount, binderDetails, binderPages, cardCountText, cleanCards, cleanCover, cleanPageCount,
+  fitCardsIntoPages, forgetBinder, loadBinder, loadBinderList, manaColor, minPagesFor, saveBinder, saveBinderList,
   type Binder,
 } from '../../lib/binderStorage';
+import { binderToCsv } from '../../lib/binderCsv';
 import {
   DriveError, createBinderFile, getDriveUser, listBinderFiles, nameFromFileName, syncBinder,
   trashBinderFile, updateBinderDetails,
@@ -41,7 +42,7 @@ const shelfShortcuts: Shortcut[] = [
   { keys: <kbd>Space</kbd>, does: 'Pick up the binder. Then the arrows choose its spot, Space drops it, Esc cancels' },
   { keys: <kbd>E</kbd>, does: 'Binder properties (rename, pages, cover)' },
   { keys: <kbd>Delete</kbd>, does: 'Delete the binder (it asks first)' },
-  { keys: <kbd>D</kbd>, does: 'Download the binder as a .JSON file' },
+  { keys: <kbd>D</kbd>, does: 'Download the binder as a .CSV file' },
   { keys: <kbd>N</kbd>, does: 'Make a new binder' },
   { keys: <kbd>?</kbd>, does: 'Show this list' },
 ];
@@ -165,7 +166,7 @@ export default function BindersPage() {
     return [{ id: file.id, name, color: null, cover: DEFAULT_COVER, pages: DEFAULT_PAGES }];
   }
 
-  /* ----- Making a binder (the New binder window, or Upload .JSON) ----- */
+  /* ----- Making a binder (the New binder window, or Upload file) ----- */
 
   // Make a new binder at the end of the shelf, in Google Drive (or on
   // this device, when used locally), with these cards (often none).
@@ -272,25 +273,26 @@ export default function BindersPage() {
     }
   }
 
-  /* ----- Downloading a binder as a .JSON file ----- */
+  /* ----- Downloading a binder as a .CSV file ----- */
 
-  // Save one binder as a .json file: its name, cover symbol, cover color,
-  // pages and cards, in the same layout as its Drive file. When signed
-  // in, get its latest cards from Drive first (it may have been changed
-  // on another computer); if that isn't possible, use this browser's copy.
+  // Save one binder as a .csv file: its cards (one per line, with the
+  // page and pocket each is in) and its name, cover symbol, cover color
+  // and pages, the same as its Drive file (see lib/binderCsv.ts). When
+  // signed in, get its latest cards from Drive first (it may have been
+  // changed on another computer); if that isn't possible, use this
+  // browser's copy.
   async function downloadBinder(id: string) {
     if (!localMode) {
       try { await syncBinder(id); } catch { /* use this browser's copy */ }
     }
-    const data = binderFileData(id);
-    // The "2" in JSON.stringify adds indenting, so the file is easy to read.
-    const file = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const details = binderDetails(id);
+    const file = new Blob([binderToCsv(details, loadBinder(id))], { type: 'text/csv' });
     // The browser saves files from a link, so make an invisible link to
     // the file's contents, "click" it, then clean up.
     const link = document.createElement('a');
     link.href = URL.createObjectURL(file);
-    // e.g. "Binder 1 2026-10-16.json" (characters not allowed in file names removed)
-    link.download = `${data.name.replace(/[\\/:*?"<>|]/g, '')} ${new Date().toISOString().slice(0, 10)}.json`;
+    // e.g. "Binder 1 2026-10-16.csv" (characters not allowed in file names removed)
+    link.download = `${details.name.replace(/[\\/:*?"<>|]/g, '')} ${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();

@@ -15,7 +15,7 @@ import { useEffect, useImperativeHandle, useRef, useState, type KeyboardEvent, t
 import { useNavigate } from 'react-router';
 import NewBinderDialog from '../../components/binders/NewBinderDialog';
 import {
-  CARDS_KEY_PREFIX, DEFAULT_PAGES, MAX_PAGES, POCKETS_PER_PAGE,
+  CARDS_KEY_PREFIX, DEFAULT_PAGES, POCKETS_PER_PAGE,
   binderPages, firstEmptyPocket, isLocalMode, loadBinder, loadBinderList,
   pocketKey, saveBinder, saveBinderList, type BinderCard,
 } from '../../lib/binderStorage';
@@ -44,7 +44,7 @@ type Props = {
 export function pocketFromAddress(params: URLSearchParams): { page: number; slot: number } | null {
   const page = parseInt(params.get('binderPage') ?? '', 10);
   const slot = parseInt(params.get('binderSlot') ?? '', 10);
-  const valid = page >= 1 && page <= MAX_PAGES && slot >= 1 && slot <= POCKETS_PER_PAGE;
+  const valid = page >= 1 && slot >= 1 && slot <= POCKETS_PER_PAGE;
   return valid ? { page, slot } : null;
 }
 
