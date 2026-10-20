@@ -30,6 +30,7 @@ import {
 import ClosedBinder from '../../components/binders/ClosedBinder';
 import { cardCountText, manaColor, type Binder } from '../../lib/binderStorage';
 import { coverColorName } from '../../lib/covers';
+import { hapticTap } from '../../lib/haptics';
 import styles from './BindersPage.module.css';
 
 // How close (pixels from the center) a dragged binder must be to the
@@ -293,8 +294,8 @@ export default function Shelf(props: Props) {
         setDragId(String(active.id));
         if (carrying) setCarrying(null);   // only one binder moves at a time
         document.body.classList.add(styles.dragging);   // the "grabbing hand" everywhere
-        // A tiny buzz when a finger picks one up, on phones that can
-        if (typeof TouchEvent !== 'undefined' && activatorEvent instanceof TouchEvent) navigator.vibrate?.(15);
+        // A small buzz or tick when a finger picks one up (lib/haptics.ts)
+        if (typeof TouchEvent !== 'undefined' && activatorEvent instanceof TouchEvent) hapticTap();
       }}
       onDragOver={({ over }) => setOverId(over ? String(over.id) : null)}
       onDragEnd={handleDragEnd}

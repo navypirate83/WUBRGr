@@ -42,6 +42,7 @@ import { RequestError } from '../../lib/http';
 import { TURN_MS, animateTurn } from '../../lib/pageTurn';
 import { binderCardFrom, isOutsideDrag, lookupFromDrop } from '../../lib/cardDrop';
 import { loadOneCard } from '../../lib/scryfall';
+import { hapticTap } from '../../lib/haptics';
 import windows from '../../components/binders/BinderWindows.module.css';
 import styles from './BinderPage.module.css';
 
@@ -549,7 +550,7 @@ function BinderPage({ binderId }: { binderId: string }) {
       ? activatorEvent.touches[0] : null;
     const mouse = activatorEvent as MouseEvent;
     dragStart.current = touch ? { x: touch.clientX, y: touch.clientY } : { x: mouse.clientX, y: mouse.clientY };
-    if (touch) navigator.vibrate?.(15);   // a tiny buzz, on phones that can
+    if (touch) hapticTap();   // a small buzz or tick: the card has lifted (lib/haptics.ts)
     dragRef.current = { from, target: null, circle: null };
     setDragFrom(from);
     document.body.classList.add(styles.dragging);   // the "grabbing hand" everywhere

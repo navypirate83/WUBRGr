@@ -32,6 +32,9 @@ of the `.json` (which the original site can still open).
 - **Settings**: theme (Dark, System or Light) and which formats show in
   Format Legality, saved to Google Drive.
 - **Help**: instructions for every page.
+- **Installable** as an app on computers and phones, and opens without an
+  internet connection (`public/manifest.webmanifest` and the service
+  worker `public/sw.js`).
 - Works with the mouse, touch and the keyboard.
 
 ## How it's built

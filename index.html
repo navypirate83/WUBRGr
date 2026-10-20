@@ -19,6 +19,30 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 
   <!--
+    Installing the site as an app (on a computer, Android phone or iPhone).
+    The "manifest" file (public/manifest.webmanifest) tells the browser:
+      - name / short_name: the app's name, under its icon
+      - start_url / scope: the app opens at the home page, and every page
+        of the site belongs to it
+      - display "standalone": it opens in its own window, without the
+        browser's address bar and tabs
+      - background_color / theme_color: the dark color shown while it
+        starts up, and for the window's title bar
+      - icons: the open-binder picture in two sizes, plus a "maskable" one
+        with extra space around it, so phones can crop it into a circle or
+        rounded square without cutting off the binder
+    "theme-color" colors the browser's bar on phones to match. The
+    "apple-mobile-web-app" lines do the same job on iPhones and iPads:
+    open in its own window, with this name under the icon.
+  -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#14151a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="WUBRG'r">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <!--
     This tiny script runs BEFORE the page draws, so the saved light/dark
     choice is applied right away. Without it, the page could flash the
     wrong colors while React starts up. It reads the same saved "theme"

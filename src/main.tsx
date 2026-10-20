@@ -49,3 +49,14 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+// Install the service worker (public/sw.js), which lets the app open
+// without an internet connection, and lets it be installed like an app
+// on a computer or phone. Only on the real, built site: while working
+// locally ("npm run dev"), saved copies would hide the changes being made.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL })
+      .catch(() => { /* not supported here: the site works the same without it */ });
+  });
+}

@@ -105,7 +105,8 @@ export const helpTopics: HelpTopic[] = [
             <ul>
               <li><strong>Open a binder</strong>: click it.</li>
               <li><strong>Change the order</strong>: drag a binder to a new spot on the shelf and
-                let go. On a phone, press and hold a binder until it lifts, then slide it.</li>
+                let go. On a phone, press and hold a binder until it lifts (with a small buzz or
+                tick on most phones), then slide it.</li>
             </ul>
             <p>The shelf fits as many binders across as your screen has room for.</p>
           </>
@@ -268,6 +269,34 @@ export const helpTopics: HelpTopic[] = [
         ),
       },
       {
+        id: 'my-binders-install',
+        title: 'Installing the app',
+        body: (
+          <>
+            <p>
+              WUBRG'r can be installed like an app, with the open-binder icon on your home screen
+              or desktop. It then opens in its own window, without the browser's address bar.
+            </p>
+            <ul>
+              <li><strong>Computer</strong> (Chrome or Edge): click the <strong>install</strong> icon
+                at the right end of the address bar (a screen with a down arrow), or open the
+                browser's menu and choose <strong>Install WUBRG'r</strong>.</li>
+              <li><strong>Android</strong> (Chrome): open the menu (the three dots) and
+                choose <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
+              <li><strong>iPhone or iPad</strong> (Safari): tap the <strong>Share</strong> button
+                (a square with an arrow), then <strong>Add to Home Screen</strong>.</li>
+            </ul>
+            <p>
+              The app keeps itself up to date: when you're online, it always opens the newest
+              version. With no internet, it still opens, and your binders on this device work as
+              usual (changes are saved to Google Drive when you're back online). Searching for
+              cards needs the internet, and card pictures that haven't been seen before show
+              the back of a Magic card.
+            </p>
+          </>
+        ),
+      },
+      {
         id: 'my-binders-keyboard',
         title: 'Using the keyboard',
         body: (
@@ -420,8 +449,8 @@ export const helpTopics: HelpTopic[] = [
               <li><strong>With a mouse</strong>: press on a card and drag it. A plain click
                 (without moving) still opens the card in the MTG Card Finder.</li>
               <li><strong>On a phone</strong>: press and hold a card for a moment until it
-                lifts, then slide it. A quick tap still opens the card, and a quick swipe
-                still turns the page.</li>
+                lifts (most phones give a small buzz or tick when it does), then slide it. A
+                quick tap still opens the card, and a quick swipe still turns the page.</li>
             </ul>
             <p>Then:</p>
             <ul>

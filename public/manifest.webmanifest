@@ -1,0 +1,17 @@
+{
+  "name": "WUBRG'r",
+  "short_name": "WUBRG'r",
+  "description": "A Magic: The Gathering card binder: keep your cards in binders that look and work like real ones, and find any card with the MTG Card Finder.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#14151a",
+  "theme_color": "#14151a",
+  "categories": ["games", "utilities"],
+  "icons": [
+    { "src": "icons/favicon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
