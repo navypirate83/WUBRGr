@@ -15,13 +15,12 @@ import { useEffect, useImperativeHandle, useRef, useState, type KeyboardEvent, t
 import { useNavigate } from 'react-router';
 import NewBinderDialog from '../../components/binders/NewBinderDialog';
 import {
-  CARDS_KEY_PREFIX, DEFAULT_PAGES, POCKETS_PER_PAGE,
-  binderPages, firstEmptyPocket, isLocalMode, loadBinder, loadBinderList,
+  DEFAULT_PAGES, POCKETS_PER_PAGE,
+  binderPages, firstEmptyPocket, hasBinderCopy, isLocalMode, loadBinder, loadBinderList,
   pocketKey, saveBinder, saveBinderList, type BinderCard,
 } from '../../lib/binderStorage';
 import { DriveError, createBinderFile, syncBinder } from '../../lib/googleDrive';
 import { coverLook } from '../../lib/covers';
-import { storageGet } from '../../lib/storage';
 import styles from './SearchPage.module.css';
 
 // What the card area can ask this button to do (the A key)
@@ -128,7 +127,7 @@ export default function AddToBinder({ cardEntry, fromBinder, pocket, onMessage, 
         await syncBinder(id);
       } catch (err) {
         // Only go ahead if this browser already has a copy to add to.
-        if (storageGet(CARDS_KEY_PREFIX + id) === null) {
+        if (!hasBinderCopy(id)) {
           driveProblem(err, 'Couldn\'t get your binder from Google Drive.');
           setBusy(false);
           closeMenu(true);

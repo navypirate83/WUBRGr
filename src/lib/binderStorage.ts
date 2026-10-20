@@ -2,19 +2,21 @@
    BINDER STORAGE
    Each binder's real home is a file in the person's Google Drive (see
    googleDrive.ts). This file keeps a WORKING COPY of each binder in the
-   browser's localStorage, so pages open instantly and keep working even
-   when the Google connection has run out. A "needs saving" marker
-   remembers which binders have changes that haven't reached Drive yet.
+   browser, so pages open instantly and keep working even when the
+   Google connection has run out. A "needs saving" marker remembers
+   which binders have changes that haven't reached Drive yet.
+   The cards themselves are kept in the browser's big database
+   (IndexedDB: see cardStore.ts); the small things (the list of
+   binders, the markers) are kept in localStorage.
    LOCAL USE ONLY: someone can skip signing in ("Skip login, local use
    only" on the welcome page). Then this browser's copy is the ONLY copy,
    until they sign in (which uploads them: see uploadLocalBinders).
-   Everything is saved under the same names as the original site, so
-   binders made there show up here, and the other way round.
    Plain TypeScript with no React in it.
    ===================================================================== */
 
 import { storageGet, storageRemove, storageSet } from './storage';
 import { accountChanged } from './accountEvents';
+import { clearCards, countCards, deleteCards, hasCards, readCards, writeCards } from './cardStore';
 
 /* ---------------------------------------------------------------------
    SIZES AND LIMITS
@@ -38,12 +40,11 @@ export const MAX_COPIES = 99;
 // were saved as .csv files), so an uploaded one can be recognized
 export const FILE_APP_NAME = 'mtg-card-binder';
 
-// The names things are saved under in localStorage:
-//  - binderCards:<id>  one binder's cards (<id> is its Google Drive file id)
+// The names things are saved under in localStorage (each binder's cards
+// are in IndexedDB, found by the binder's id: its Google Drive file id):
 //  - binderDirty:<id>  set when that binder has changes not yet in Drive
 //  - binderList        the list of binders: [{ id, name, color, cover, pages }, ...]
 //  - localOnly         "yes" while using the site without signing in
-export const CARDS_KEY_PREFIX = 'binderCards:';
 const DIRTY_KEY_PREFIX = 'binderDirty:';
 const BINDER_LIST_KEY = 'binderList';
 const LOCAL_MODE_KEY = 'localOnly';
@@ -227,23 +228,26 @@ export function fitCardsIntoPages(cards: BinderCards, pages: number): BinderCard
 
 // Read one binder's saved cards (empty if nothing is saved yet).
 export function loadBinder(id: string): BinderCards {
-  try {
-    return JSON.parse(storageGet(CARDS_KEY_PREFIX + id) ?? 'null') ?? {};
-  } catch {
-    return {};
-  }
+  return readCards(id) ?? {};
+}
+
+// Does this browser have a copy of this binder's cards yet? (A binder
+// made on another computer may not have been brought over yet.)
+export function hasBinderCopy(id: string): boolean {
+  return hasCards(id);
 }
 
 // How many cards a binder has
 export function binderCardCount(id: string): number {
-  return Object.keys(loadBinder(id)).length;
+  return countCards(id);
 }
 
 // Save one binder's cards. Normally this also marks the binder as "needs
 // saving to Google Drive" (pass { dirty: false } when the cards just CAME
-// from Drive). Returns false if storage is blocked, so pages can say so.
+// from Drive). Returns false if saving on this device isn't working
+// (storage blocked or full), so pages can say so.
 export function saveBinder(cards: BinderCards, id: string, { dirty = true } = {}): boolean {
-  if (!storageSet(CARDS_KEY_PREFIX + id, JSON.stringify(cards))) return false;
+  if (!writeCards(id, cards)) return false;
   // The marker holds the time of the change, so a save to Drive that
   // started earlier can tell whether newer changes have happened since.
   if (dirty) storageSet(DIRTY_KEY_PREFIX + id, String(Date.now()));
@@ -331,7 +335,7 @@ export function binderDetails(id: string): Omit<Binder, 'id'> {
 
 // Forget one binder kept in this browser (after it's deleted or uploaded).
 export function forgetBinder(id: string): void {
-  storageRemove(CARDS_KEY_PREFIX + id);
+  deleteCards(id);
   storageRemove(DIRTY_KEY_PREFIX + id);
   saveBinderList(loadBinderList().filter((b) => b.id !== id));
 }
@@ -339,10 +343,9 @@ export function forgetBinder(id: string): void {
 // Forget every binder saved in this browser (used when signing out, so
 // the next person on this computer doesn't see them).
 export function clearAllBinders(): void {
-  for (const binder of loadBinderList()) {
-    storageRemove(CARDS_KEY_PREFIX + binder.id);
-    storageRemove(DIRTY_KEY_PREFIX + binder.id);
-  }
+  const ids = loadBinderList().map((binder) => binder.id);
+  clearCards(ids);
+  for (const id of ids) storageRemove(DIRTY_KEY_PREFIX + id);
   storageRemove(BINDER_LIST_KEY);
   // Earlier versions of the site also remembered the binder opened last.
   storageRemove('lastBinderId');
@@ -467,7 +470,8 @@ export function samePrinting(a: BinderCard, b: BinderCard): boolean {
     (a.lang || 'en') === (b.lang || 'en') && Boolean(a.foil) === Boolean(b.foil);
 }
 
-// "1 card", "5 cards"
+// "1 card", "5 cards", "2,400 cards" (big numbers get commas, written
+// the way this device's language does)
 export function cardCountText(count: number): string {
-  return `${count} card${count === 1 ? '' : 's'}`;
+  return `${count.toLocaleString()} card${count === 1 ? '' : 's'}`;
 }

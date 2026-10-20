@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RequestError } from './lib/http';
+import { openCardStore } from './lib/cardStore';
 import App from './App';
 import './styles/global.css';
 import './styles/covers.css';
@@ -33,22 +34,26 @@ const queryClient = new QueryClient({
   },
 });
 
-// Draw the app. The pieces around it:
+// Draw the app, once the binders' cards have been read from the
+// browser's database (lib/cardStore.ts: it takes a moment, and every
+// page expects them to be ready). The pieces around it:
 //  - StrictMode: while working locally, React double-checks the code and
 //    warns about common mistakes (it does nothing on the real site).
 //  - QueryClientProvider: lets every page use the queryClient above.
 //  - BrowserRouter: lets the app show a different page for each address
 //    (like /WUBRGr/help) without reloading. "basename" is the "/WUBRGr/"
 //    part at the start of every address (set as "base" in vite.config.ts).
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <App />
-      </BrowserRouter>
-    </QueryClientProvider>
-  </StrictMode>,
-);
+openCardStore().finally(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
+    </StrictMode>,
+  );
+});
 
 // Install the service worker (public/sw.js), which lets the app open
 // without an internet connection, and lets it be installed like an app

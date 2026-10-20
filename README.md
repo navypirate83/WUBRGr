@@ -59,7 +59,8 @@ of the `.json` (which the original site can still open).
 - `src/hooks/`: shared page behavior (shortcut keys, messages read out
   to screen readers, who's signed in, settings).
 - `src/lib/`: plain TypeScript with no React (Google sign-in and Drive,
-  binder storage, binder `.csv` files, cover colors, talking to Scryfall, the card-name
+  binder storage (each binder's cards in the browser's IndexedDB), binder
+  `.csv` files, cover colors, talking to Scryfall, the card-name
   search, card helpers, prices, the page-turn animation, card pictures
   dropped from other websites, settings, light/dark theme), to share
   with a future phone app.
