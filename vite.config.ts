@@ -15,4 +15,21 @@ export default defineConfig({
 
   // While working locally, the app runs at http://localhost:3000/WUBRGr/
   server: { port: 3000 },
+
+  // Building the finished site: the libraries the app uses (React, React
+  // Router, TanStack Query, dnd-kit: everything from "node_modules") go
+  // into a file of their own, "vendor-....js", separate from the app's
+  // own code. Both still load straight away, but each file stays a sensible
+  // size, and since the libraries change far less often than the app,
+  // browsers (and the installed app's saved copy) can keep that file
+  // between updates instead of downloading it again.
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [{ name: 'vendor', test: /node_modules/ }],
+        },
+      },
+    },
+  },
 });
