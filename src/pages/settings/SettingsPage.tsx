@@ -5,6 +5,7 @@
    on the right (see SettingRow), or, for a bigger control, underneath
    (see SettingBlock). The sections so far:
    - Appearance: the theme (Dark, System or Light)
+   - Binders: the page layout (pockets across and down each page)
    - Search: which formats show in the Format Legality box
    TO ADD A SETTING: add it in lib/settings.ts first (see the steps at
    the top of that file), then add a SettingRow for it below, in the
@@ -13,13 +14,14 @@
    locally): anyone else goes to the welcome page.
    ===================================================================== */
 
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Navigate } from 'react-router';
 import { useAccount } from '../../hooks/useAccount';
 import { useSettings } from '../../hooks/useSettings';
 import type { ThemeChoice } from '../../lib/theme';
 import { changeSettings, type Settings } from '../../lib/settings';
 import { FORMAT_NAMES } from '../../lib/cards';
+import { LAYOUT_MAX, LAYOUT_MIN, pocketsPerPage, type PageLayout } from '../../lib/pageLayout';
 import styles from './SettingsPage.module.css';
 
 /* ---------------------------------------------------------------------
@@ -121,6 +123,39 @@ function ThemeChoicePicker({ value, onChange }: { value: ThemeChoice; onChange: 
   );
 }
 
+// The page layout: two drop-down lists (pockets across, pockets down,
+// each 1 to 6), and a small picture of one page with that many pockets,
+// with how many cards a page holds.
+const LAYOUT_COUNTS = Array.from({ length: LAYOUT_MAX - LAYOUT_MIN + 1 }, (_, i) => LAYOUT_MIN + i);
+function LayoutPicker({ value, onChange }: { value: PageLayout; onChange: (layout: PageLayout) => void }) {
+  return (
+    <div className={styles.layoutPicker}>
+      <div className={styles.layoutChoices}>
+        <label className={styles.layoutChoice}>
+          Across
+          <select value={value.across} onChange={(event) => onChange({ ...value, across: Number(event.target.value) })}>
+            {LAYOUT_COUNTS.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+        <span aria-hidden="true">×</span>
+        <label className={styles.layoutChoice}>
+          Down
+          <select value={value.down} onChange={(event) => onChange({ ...value, down: Number(event.target.value) })}>
+            {LAYOUT_COUNTS.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+        <span className={styles.layoutCount}>{pocketsPerPage(value)} cards a page</span>
+      </div>
+      {/* The picture: one little card-shaped box per pocket ("--across"
+          tells the stylesheet how many go in each row). Screen readers skip
+          it: the numbers above say the same. */}
+      <div className={styles.layoutPreview} style={{ '--across': value.across } as CSSProperties} aria-hidden="true">
+        {Array.from({ length: pocketsPerPage(value) }, (_, i) => <span key={i} />)}
+      </div>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------------
    THE PAGE
    --------------------------------------------------------------------- */
@@ -176,6 +211,14 @@ export default function SettingsPage() {
                     description="Dark or light colors, or System to match your device's own setting.">
           <ThemeChoicePicker value={settings.theme} onChange={(theme) => change({ theme })} />
         </SettingRow>
+      </SettingsSection>
+
+      {/* BINDERS: how every binder's pages are laid out */}
+      <SettingsSection id="binders" title="Binders">
+        <SettingBlock id="layoutSetting" name="Page layout"
+                      description="How many pockets across and down each binder page has, like 3 × 3 for 9-pocket pages. Changing it keeps your cards in the same order, flowing onto more or fewer pages; change it back and every card returns to where it was.">
+          <LayoutPicker value={settings.pageLayout} onChange={(pageLayout) => change({ pageLayout })} />
+        </SettingBlock>
       </SettingsSection>
 
       {/* SEARCH: the MTG Card Finder */}

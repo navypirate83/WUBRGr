@@ -17,13 +17,20 @@
 import { storageGet, storageRemove, storageSet } from './storage';
 import { accountChanged } from './accountEvents';
 import { clearCards, countCards, deleteCards, hasCards, readCards, writeCards } from './cardStore';
+import { pocketsPerPage } from './pageLayout';
 
 /* ---------------------------------------------------------------------
    SIZES AND LIMITS
    --------------------------------------------------------------------- */
 
-// How many pockets on each page (4 x 4)
-export const POCKETS_PER_PAGE = 16;
+// How many pockets on each page: the page layout's across x down (4 x 4
+// = 16 to start), chosen in Settings (see pageLayout.ts). It's a function
+// because the layout can change while the site is open.
+export { pocketsPerPage } from './pageLayout';
+
+// The pockets per page of the older .json binder files (and the original
+// site): always 4 across by 4 down
+const OLD_POCKETS_PER_PAGE = 16;
 
 // How many pages a new binder has. There's no most: a binder can have as
 // many pages as it needs (an uploaded .csv file adds pages to fit all its
@@ -185,16 +192,45 @@ export function cleanPageCount(pages: unknown): number {
   return number;
 }
 
-// The fewest pages that can hold this many cards (16 per page, at least 1)
+// The fewest pages that can hold this many cards (at least 1)
 export function minPagesFor(cardCount: number): number {
-  return Math.max(1, Math.ceil(cardCount / POCKETS_PER_PAGE));
+  return Math.max(1, Math.ceil(cardCount / pocketsPerPage()));
+}
+
+// Move cards from one number of pockets per page to another, keeping
+// each card's place in the binder's order: pocket 1, 2, 3… counting page
+// by page. E.g. going from 16 to 9 per page, page 1 pocket 12 (the 12th
+// pocket) becomes page 2 pocket 3 (9 + 3 = 12th). Going back reverses
+// it exactly. Pockets that don't exist in "fromPerPage" are left out.
+export function relayoutCards(cards: BinderCards, fromPerPage: number, toPerPage: number): BinderCards {
+  if (fromPerPage === toPerPage) return cards;
+  const moved: BinderCards = {};
+  for (const [key, card] of Object.entries(cards)) {
+    const [page, slot] = key.split('-').map(Number);
+    if (!(page >= 1 && slot >= 1 && slot <= fromPerPage)) continue;
+    const place = (page - 1) * fromPerPage + (slot - 1);   // 0 = the very first pocket
+    moved[pocketKey(Math.floor(place / toPerPage) + 1, (place % toPerPage) + 1)] = card;
+  }
+  return moved;
+}
+
+// The page layout changed: move every binder's cards in this browser to
+// match. (Their files in Google Drive say which layout they were saved
+// with, so they're read correctly whichever layout is in use, and don't
+// need saving again for this.)
+export function relayoutAllBinders(fromPerPage: number, toPerPage: number): void {
+  for (const binder of loadBinderList()) {
+    if (!hasBinderCopy(binder.id)) continue;
+    saveBinder(relayoutCards(loadBinder(binder.id), fromPerPage, toPerPage), binder.id, { dirty: false });
+  }
 }
 
 // Find the first empty pocket, page by page, pocket by pocket, in a
 // binder with this many pages. Returns { page, slot }, or null if full.
 export function firstEmptyPocket(cards: BinderCards, pages: number): { page: number; slot: number } | null {
+  const perPage = pocketsPerPage();
   for (let page = 1; page <= pages; page++) {
-    for (let slot = 1; slot <= POCKETS_PER_PAGE; slot++) {
+    for (let slot = 1; slot <= perPage; slot++) {
       if (!cards[pocketKey(page, slot)]) return { page, slot };
     }
   }
@@ -397,8 +433,11 @@ function isValidCard(card: unknown): card is BinderCard {
       Object.values(c.extra).every((value) => typeof value === 'string')));
 }
 
-// Keep only the valid cards in pockets that can exist (like "3-5": any
-// page, pockets 1 to 16). "skipped" counts what was thrown away.
+// The cards from an older .json binder (an uploaded file, an old Google
+// Drive file, or the original site's single binder). Those were always
+// 4 across by 4 down, so only pockets 1 to 16 exist in them; the valid
+// cards are kept, and moved to the page layout in use now (see
+// relayoutCards). "skipped" counts what was thrown away.
 export function cleanCards(incoming: unknown): { cards: BinderCards; skipped: number } {
   const cards: BinderCards = {};
   let skipped = 0;
@@ -407,11 +446,11 @@ export function cleanCards(incoming: unknown): { cards: BinderCards; skipped: nu
     const match = /^(\d+)-(\d+)$/.exec(key);
     const page = match ? Number(match[1]) : 0;
     const slot = match ? Number(match[2]) : 0;
-    const pocketExists = page >= 1 && slot >= 1 && slot <= POCKETS_PER_PAGE;
+    const pocketExists = page >= 1 && slot >= 1 && slot <= OLD_POCKETS_PER_PAGE;
     if (pocketExists && isValidCard(card)) cards[pocketKey(page, slot)] = card;
     else skipped++;
   }
-  return { cards, skipped };
+  return { cards: relayoutCards(cards, OLD_POCKETS_PER_PAGE, pocketsPerPage()), skipped };
 }
 
 // Check an older .json binder file's data (uploaded with "Upload file")

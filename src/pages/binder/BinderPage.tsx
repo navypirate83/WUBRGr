@@ -2,7 +2,7 @@
    ONE BINDER: ITS PAGES OF POCKETS
    Opening a binder shows its pages like a real binder lying open: two
    pages side by side on a computer or tablet, one page at a time on a
-   phone. Each page has 16 pockets (see Pocket.tsx).
+   phone. Each page has the pockets across and down chosen in Settings (see Pocket.tsx and lib/pageLayout.ts).
    - Previous / Next (or a swipe on a phone) turn the page, with a 3D
      page-turn animation (lib/pageTurn.ts).
    - Cards can be dragged to another pocket (swapping with any card
@@ -16,7 +16,7 @@
      Drive a moment later (the top bar says where it's saved).
    ===================================================================== */
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { Navigate, useLocation, useParams, useSearchParams } from 'react-router';
 import {
@@ -33,8 +33,8 @@ import Pocket from './Pocket';
 import BinderSearch from '../../components/binders/BinderSearch';
 import MoveCardDialog from './MoveCardDialog';
 import {
-  MAX_COPIES, POCKETS_PER_PAGE,
-  binderDirtyStamp, binderPages, cardCount, findBinder, isLocalMode, loadBinder, pocketKey, saveBinder,
+  MAX_COPIES, pocketsPerPage,
+  binderDirtyStamp, binderName, binderPages, cardCount, findBinder, isLocalMode, loadBinder, pocketKey, saveBinder,
   withCount, type BinderCards,
 } from '../../lib/binderStorage';
 import { DriveError, initGoogleSignIn, isSignedIn, signInWithGoogle, syncBinder } from '../../lib/googleDrive';
@@ -43,6 +43,8 @@ import { TURN_MS, animateTurn } from '../../lib/pageTurn';
 import { binderCardFrom, isOutsideDrag, lookupFromDrop } from '../../lib/cardDrop';
 import { loadOneCard } from '../../lib/scryfall';
 import { hapticTap } from '../../lib/haptics';
+import { downloadBinderCsv } from '../../lib/binderDownload';
+import { layoutKey, onLayoutChange, pageLayout } from '../../lib/pageLayout';
 import windows from '../../components/binders/BinderWindows.module.css';
 import styles from './BinderPage.module.css';
 
@@ -83,6 +85,7 @@ const binderShortcuts: Shortcut[] = [
   { keys: <><kbd>+</kbd> <kbd>−</kbd></>, does: 'One more / one fewer copy' },
   { keys: <kbd>Delete</kbd>, does: 'Remove the card (it asks first)' },
   { keys: <kbd>M</kbd>, does: 'Move the card to another binder' },
+  { keys: <kbd>D</kbd>, does: 'Download this binder as a .CSV file' },
   { keys: <kbd>?</kbd>, does: 'Show this list' },
 ];
 
@@ -121,10 +124,14 @@ function range(first: number, last: number): number[] {
 }
 
 // Each binder gets a fresh page (so moving from one binder to another
-// starts again from scratch): "key" makes React draw a new one.
+// starts again from scratch): "key" makes React draw a new one. The same
+// happens when the page layout changes (in Settings, or in another tab):
+// the cards have been moved to the new layout, so the page starts again
+// with them.
 export default function BinderPageForAddress() {
   const { binderId = '' } = useParams();
-  return <BinderPage key={binderId} binderId={binderId} />;
+  const layout = useSyncExternalStore(onLayoutChange, layoutKey);
+  return <BinderPage key={`${binderId} ${layout}`} binderId={binderId} />;
 }
 
 function BinderPage({ binderId }: { binderId: string }) {
@@ -132,6 +139,8 @@ function BinderPage({ binderId }: { binderId: string }) {
   const [params] = useSearchParams();
   const binder = findBinder(binderId);
   const { announce, announcer } = useAnnouncer();
+  // The pockets across and down each page (from Settings)
+  const layout = pageLayout();
 
   /* ----- The cards, and saving them ----- */
 
@@ -643,17 +652,21 @@ function BinderPage({ binderId }: { binderId: string }) {
   const pagesInView = () => ({ first: currentRef.current, last: Math.min(currentRef.current + (isPhone() ? 0 : 1), totalPages) });
 
   // The pocket at a column and row of what's showing. Columns count across
-  // both pages (0-7 with two pages, 0-3 on a phone); rows go 0-3.
+  // both pages (with 4 across: 0-7 with two pages, 0-3 on a phone); rows
+  // go from 0 to one less than the pockets down.
   function pocketInView(column: number | 'last', row: number): string {
     const { first, last } = pagesInView();
-    const columns = (last - first + 1) * 4;
+    const columns = (last - first + 1) * layout.across;
     const col = column === 'last' || column >= columns ? columns - 1 : column;
-    return pocketKey(first + Math.floor(col / 4), row * 4 + (col % 4) + 1);
+    return pocketKey(first + Math.floor(col / layout.across), row * layout.across + (col % layout.across) + 1);
   }
 
   // Where a pocket is in what's showing: { column, row }
   function placeInView(key: string) {
-    return { column: (pageOf(key) - currentRef.current) * 4 + (slotOf(key) - 1) % 4, row: Math.floor((slotOf(key) - 1) / 4) };
+    return {
+      column: (pageOf(key) - currentRef.current) * layout.across + (slotOf(key) - 1) % layout.across,
+      row: Math.floor((slotOf(key) - 1) / layout.across),
+    };
   }
 
   // Go to a pocket. While carrying a card, screen readers hear what's there.
@@ -677,8 +690,8 @@ function BinderPage({ binderId }: { binderId: string }) {
   function arrowMove(dx: number, dy: number) {
     const { column, row } = placeInView(activeKey);
     const { first, last } = pagesInView();
-    const columns = (last - first + 1) * 4;
-    const newRow = Math.max(0, Math.min(3, row + dy));
+    const columns = (last - first + 1) * layout.across;
+    const newRow = Math.max(0, Math.min(layout.down - 1, row + dy));
     const newColumn = column + dx;
     if (newColumn < 0 && turnPage(-1, () => goTo(pocketInView('last', newRow)))) return;
     if (newColumn >= columns && turnPage(1, () => goTo(pocketInView(0, newRow)))) return;
@@ -771,13 +784,19 @@ function BinderPage({ binderId }: { binderId: string }) {
       focused.matches(':focus-visible')));
   }
 
-  // The ? key, anywhere: the Keyboard shortcuts window (a carried card
-  // is put back first)
+  // Two keys that work anywhere on the page (not while typing in a box):
+  //   ?  the Keyboard shortcuts window (a carried card is put back first)
+  //   D  download this binder as a .csv file (the button beside its name)
   useShortcutKeys((event) => {
-    if (event.key !== '?') return;
-    event.preventDefault();
-    setCarrying(null);
-    setShortcutsOpen(true);
+    if (event.key === '?') {
+      event.preventDefault();
+      setCarrying(null);
+      setShortcutsOpen(true);
+    } else if (event.key === 'd' || event.key === 'D') {
+      event.preventDefault();
+      downloadBinderCsv(binderId);
+      announce(`Downloading ${binderName(binderId)}.`);
+    }
   });
 
   // The key guide at the top: which keys do what right now
@@ -863,12 +882,15 @@ function BinderPage({ binderId }: { binderId: string }) {
   const moving = movingKey ? cards[movingKey] : undefined;
 
   return (
-    <div className={styles.page}>
+    // "--across" and "--down" tell the stylesheet the page layout, so the
+    // pockets are laid out and sized to match (see BinderPage.module.css)
+    <div className={styles.page} style={{ '--across': layout.across, '--down': layout.down } as CSSProperties}>
       {/* React puts this <title> in the page's <head>: the browser tab's name */}
       <title>{`${binder.name} – WUBRG'r`}</title>
 
-      {/* In the middle of the top bar: the binder's name, then its save
-          status. (On narrow windows, the top bar moves both to a second
+      {/* In the middle of the top bar: the binder's name, a small round
+          download button (save the binder as a .csv file), then its save
+          status. (On narrow windows, the top bar moves them to a second
           row, under "WUBRG'r".) The save
           status is "✓ Saved to Drive", "Saving…" and so on, read out by
           screen readers as it changes, with "Connect Drive" when the
@@ -876,6 +898,19 @@ function BinderPage({ binderId }: { binderId: string }) {
       {toolsBox && createPortal(
         <>
           <h2 className={styles.binderName}>{binder.name}</h2>
+          <button
+            className={styles.downloadButton}
+            type="button"
+            title={`Download ${binder.name} as .CSV`}
+            aria-label={`Download ${binder.name} as a .CSV file`}
+            onClick={() => downloadBinderCsv(binderId)}
+          >
+            {/* A down arrow onto a line */}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"
+                 strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+            </svg>
+          </button>
           <span className={styles.statusGroup}>
             <span className={styles.syncStatus} data-state={status.state} aria-live="polite">{status.text}</span>
             {status.state === 'signed-out' && (
@@ -990,7 +1025,7 @@ function BinderPage({ binderId }: { binderId: string }) {
           </div>
 
           {/* The pages near the ones showing (PICTURE_PAGES_AHEAD either
-              side), each with its 16 pockets. Only the one or two showing
+              side), each with its pockets. Only the one or two showing
               are visible; the others are ready for a page turn. Pages
               further away aren't drawn at all, so a binder with hundreds of
               pages opens as fast as a small one. */}
@@ -999,7 +1034,7 @@ function BinderPage({ binderId }: { binderId: string }) {
             Math.min(totalPages, Math.max(...shown) + PICTURE_PAGES_AHEAD),
           ).map((n) => (
             <div key={n} className={styles.binderPage} data-page-number={n} aria-label={`Page ${n}`} hidden={!shown.includes(n)}>
-              {range(1, POCKETS_PER_PAGE).map((slot) => {
+              {range(1, pocketsPerPage()).map((slot) => {
                 const key = pocketKey(n, slot);
                 return (
                   <Pocket

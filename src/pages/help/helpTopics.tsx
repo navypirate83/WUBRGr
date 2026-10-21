@@ -88,7 +88,11 @@ export const helpTopics: HelpTopic[] = [
                 color you like.</li>
               <li>Click <strong>Create binder</strong>.</li>
             </ol>
-            <p>New binders have 10 pages of 16 pockets (160 cards). There's no limit on how many binders you can make.</p>
+            <p>
+              New binders have 10 pages: 160 cards with the usual 16 pockets a page (4 across, 4
+              down), or as many as your <HelpLink to="settings-layout">page layout</HelpLink> holds.
+              There's no limit on how many binders you can make.
+            </p>
             <p>
               To bring back a binder you saved as a file, or make one from a ManaBox card
               list, use <strong>Upload .CSV</strong> in the same window
@@ -169,11 +173,15 @@ export const helpTopics: HelpTopic[] = [
               <li><strong>Binder</strong>, <strong>Cover symbol</strong>, <strong>Cover
                 color</strong> and <strong>Pages</strong>: the binder's own name, cover and
                 size (the same on every line).</li>
+              <li><strong>Page layout</strong>: the pockets across and down a page (like "4x4")
+                that the Page and Pocket numbers count in. A file saved with one layout opens
+                correctly with another: its cards stay in the same order.</li>
             </ul>
             <p>You can also save a binder to your computer, to keep as a backup or share with a friend:</p>
             <ul>
-              <li><strong>Download</strong>: click the small <strong>down arrow</strong> at the
-                right end of the line under a binder (beside its card count).</li>
+              <li><strong>Download</strong>: open the binder, then click the small
+                round <strong>down arrow</strong> beside its name at the top of the page (or
+                press <strong>D</strong>).</li>
               <li><strong>Upload</strong>: click the <strong>+</strong> binder,
                 then <strong>Upload .CSV</strong> at the bottom left of the New binder window, and
                 pick a file. It's added to the end of your shelf as a new binder, with every card
@@ -314,7 +322,6 @@ export const helpTopics: HelpTopic[] = [
               <li><strong>Enter</strong>: open the binder (on the <strong>+</strong>, make a new binder).</li>
               <li><strong>E</strong>: Binder properties (rename, pages, cover).</li>
               <li><strong>Delete</strong>: delete the binder (it asks first).</li>
-              <li><strong>D</strong>: download the binder as a .CSV file.</li>
               <li><strong>N</strong>: make a new binder.</li>
             </ul>
             <p>To change the order of your binders:</p>
@@ -355,7 +362,8 @@ export const helpTopics: HelpTopic[] = [
       <>
         Opening a binder shows its pages, like a real binder lying open: two pages
         side by side on a computer or tablet, one page at a time on a phone. Each
-        page has 16 pockets, four across and four down. The binder's name is in the
+        page has 16 pockets, four across and four down, unless you've chosen another page
+        layout in <HelpLink to="settings-layout">Settings</HelpLink>. The binder's name is in the
         top bar (under WUBRG'r on a narrow screen), with where it's saved.
       </>
     ),
@@ -514,8 +522,9 @@ export const helpTopics: HelpTopic[] = [
               Card pictures that can't be downloaded show the back of a Magic card instead.
             </p>
             <p>
-              To keep your own copy of a binder as a file, use the download button under it
-              on My Binders, as a .CSV file (see <HelpLink to="my-binders-backup">Binder files</HelpLink>).
+              To keep your own copy of a binder as a .CSV file, click the small round
+              <strong> down arrow</strong> beside its name at the top of the page, or
+              press <strong>D</strong> (see <HelpLink to="my-binders-backup">Binder files</HelpLink>).
             </p>
           </>
         ),
@@ -541,6 +550,7 @@ export const helpTopics: HelpTopic[] = [
                 copy, <strong>−</strong> asks before removing the card.</li>
               <li><strong>Delete</strong>: remove the card (it asks first).</li>
               <li><strong>M</strong>: move the card to another binder.</li>
+              <li><strong>D</strong>: download this binder as a .CSV file.</li>
             </ul>
             <p>To move a card to another pocket:</p>
             <ol>
@@ -751,7 +761,7 @@ export const helpTopics: HelpTopic[] = [
               right swaps between light and dark instead.
             </p>
             <p>
-              Settings are in sections, like <strong>Appearance</strong> and
+              Settings are in sections: <strong>Appearance</strong>, <strong>Binders</strong> and
               <strong> Search</strong>. Each change saves as soon as you make it: there's no Save
               button. The line under the Settings heading says where it was saved.
             </p>
@@ -774,6 +784,27 @@ export const helpTopics: HelpTopic[] = [
             <p>
               Click a choice, or use <strong>Tab</strong> to reach them and the
               <strong> arrow keys</strong> to move between them.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: 'settings-layout',
+        title: 'Page layout',
+        body: (
+          <>
+            <p>
+              Under <strong>Binders</strong>, <strong>Page layout</strong> sets how many pockets
+              every binder page has: pick how many <strong>Across</strong> and
+              how many <strong>Down</strong> (1 to 6 each). For example, 3 × 3 for 9-pocket pages,
+              4 × 3 for 12, or 3 × 5. It starts at 4 × 4 (16 pockets). The small picture beside
+              them shows one page, with how many cards it holds.
+            </p>
+            <p>
+              The layout is the same for all your binders. Changing it keeps every card in the
+              same order (pocket 1, 2, 3… counting page by page), so cards flow onto more pages
+              (or fewer). A binder keeps its number of pages; if its cards need more, pages are
+              added. Change the layout back, and every card returns to exactly where it was.
             </p>
           </>
         ),

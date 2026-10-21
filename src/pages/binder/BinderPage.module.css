@@ -17,25 +17,32 @@
    - --binder-height: the window's height minus those (never below 380px,
      so a very short window still shows a usable binder). "svh" ignores a
      phone's sliding address bar.
+   - --across and --down: the page layout, pockets across and down each
+     page (4 and 4 to start). The page sets them from Settings (see
+     BinderPage.tsx); the numbers below are worked out from them.
    - --binder-chrome: the parts of the binder's height that AREN'T
      pockets: cover padding 14px x 2 + border 1px x 2 + page padding 8px
-     x 2 + 3 seams of 6px between the 4 rows = 64px.
-   - --pocket-height: what's left for the 4 rows, split 4 ways, and
+     x 2 = 46px, plus a 6px seam between each row (3 seams with 4 rows:
+     64px in all).
+   - --pocket-height: what's left for the rows, split between them, and
      --pocket-width: pockets are card-shaped (63 wide for every 88 tall).
-   - --binder-width: whatever fits 8 pockets across (4 per page) + 6 seams
-     of 6px + 4 page paddings of 8px + the 28px spine + 2 cover paddings
-     of 14px + 2px of border = 8 pockets + 126px. "min(100%, ...)" stops
-     it getting wider than the window.
+   - --binder-width: whatever fits the pockets across both pages, the 6px
+     seams between them, 4 page paddings of 8px, the 28px spine, 2 cover
+     paddings of 14px and 2px of border (= 90px). With 4 across that's 8
+     pockets + 6 seams + 90px. "min(100%, ...)" stops it getting wider
+     than the window.
    If you change any of those sizes, update these numbers too.
    ===================================================================== */
 .page {
+  --across: 4;
+  --down: 4;
   --top-gap: 130px;
   --bottom-space: 106px;
   --binder-height: max(380px, calc(100svh - var(--top-gap) - var(--bottom-space)));
-  --binder-chrome: 64px;
-  --pocket-height: calc((var(--binder-height) - var(--binder-chrome)) / 4);
+  --binder-chrome: calc(46px + (var(--down) - 1) * 6px);
+  --pocket-height: calc((var(--binder-height) - var(--binder-chrome)) / var(--down));
   --pocket-width: calc(var(--pocket-height) * 63 / 88);
-  --binder-width: min(100%, calc(8 * var(--pocket-width) + 126px));
+  --binder-width: min(100%, calc(2 * var(--across) * var(--pocket-width) + (var(--across) - 1) * 12px + 90px));
   padding: 8px 16px 12px;
   /* On a phone, a turning page swings out past the screen's edge: "clip"
      cuts it off there instead of letting the page scroll sideways */
@@ -88,11 +95,12 @@
     rgba(255, 255, 255, 0.03));
 }
 
-/* One page of pockets: 4 columns by 4 rows (16 pockets). The small gaps
-   are the plastic seams between pockets. */
+/* One page of pockets: as many columns as the layout's pockets across
+   (4 to start); the rows fill in from there. The small gaps are the
+   plastic seams between pockets. */
 .binderPage {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--across), 1fr);
   gap: 6px;
   padding: 8px;
   border-radius: 6px;
@@ -409,11 +417,13 @@
   }
 }
 
-/* The search bar above the binder: exactly as wide as the binder, and
-   centered the same way, 4px below the top bar. (It's 38px tall, which
-   --top-gap counts.) */
+/* The search bar above the binder: as wide as the binder, and centered
+   the same way, 4px below the top bar. A tall, narrow page layout (like
+   3 x 5) makes a narrow binder, so the bar is never narrower than 560px
+   (or the whole width, on a phone). (It's 38px tall, which --top-gap
+   counts.) */
 .searchRow {
-  width: var(--binder-width);
+  width: min(100%, max(var(--binder-width), 560px));
   margin: 4px auto 0;
 }
 
@@ -554,6 +564,32 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The download button beside the binder's name: a small round outlined
+   down arrow, quiet (muted) until the mouse is over it, then orange.
+   "margin-left: -8px" tucks it a little closer to the name than the top
+   bar's usual 16px gap, so it reads as belonging to the name.
+   "flex-shrink: 0" keeps it round when a long name squeezes the row. */
+.downloadButton {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-left: -8px;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.downloadButton svg { width: 14px; height: 14px; }
+.downloadButton:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 /* The save status and "Connect Drive" together, side by side */
@@ -763,12 +799,13 @@
 /* =====================================================================
    PHONES (640px or less)
    Two pages side by side would be tiny, so the binder shows ONE page at
-   a time and the spine is hidden. The size math changes to match: 4
-   pockets across, and the cover padding is 10px instead of 14px:
+   a time and the spine is hidden. The size math changes to match: one
+   page's pockets across, and the cover padding is 10px instead of 14px:
    - not-pocket height = 20px padding + 2px border + 16px page padding
-     + 18px of seams = 56px
-   - width = 4 pockets + 18px seams + 16px page padding + 20px padding
-     + 2px border = 4 pockets + 56px
+     = 38px, plus a 6px seam between each row (56px with 4 rows)
+   - width = the pockets across + a 6px seam between each + 16px page
+     padding + 20px padding + 2px border (= 38px): with 4 across, 4
+     pockets + 56px
    (The top bar's second row, and so --top-gap of 163px, is set in
    NARROW WINDOWS above.) Very small phones also allow a
    shorter binder (300px), so it still fits without scrolling.
@@ -777,8 +814,8 @@
 @media (max-width: 640px) {
   .page {
     --binder-height: max(300px, calc(100svh - var(--top-gap) - var(--bottom-space)));
-    --binder-chrome: 56px;
-    --binder-width: min(100%, calc(4 * var(--pocket-width) + 56px));
+    --binder-chrome: calc(38px + (var(--down) - 1) * 6px);
+    --binder-width: min(100%, calc(var(--across) * var(--pocket-width) + (var(--across) - 1) * 6px + 38px));
   }
   .binder {
     grid-template-columns: 1fr;

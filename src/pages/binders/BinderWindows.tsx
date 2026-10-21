@@ -13,7 +13,7 @@ import { useRef, useState } from 'react';
 import Modal from '../../components/Modal';
 import { CoverChoices, NameField, SymbolChoices } from '../../components/binders/BinderChoices';
 import {
-  NAME_LIMIT, POCKETS_PER_PAGE, cardCountText, cleanCover, minPagesFor, type Binder,
+  NAME_LIMIT, pocketsPerPage, cardCountText, cleanCover, minPagesFor, type Binder,
 } from '../../lib/binderStorage';
 import styles from '../../components/binders/BinderWindows.module.css';
 
@@ -48,7 +48,7 @@ export function BinderPropertiesDialog({ binder, cardCount, onSave, onCancel }: 
   const range = `at least ${min} page${min === 1 ? '' : 's'}`;
   const note = !Number.isInteger(pages) || pages < 1 ? `Enter a number (${range}).`
     : pages < min ? `Too few: its cards need ${range}.`
-      : `Holds ${(pages * POCKETS_PER_PAGE).toLocaleString()} cards · ${range}`;
+      : `Holds ${(pages * pocketsPerPage()).toLocaleString()} cards · ${range}`;
 
   // When the window closes with "Save", hand the changes to the page.
   // (A blank name or too few pages can't get here: the boxes are

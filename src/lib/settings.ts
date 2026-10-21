@@ -6,6 +6,8 @@
      Legality box (the codes, like "pauper"). It lists the hidden ones,
      rather than the shown ones, so a new format Scryfall adds later
      shows up without anyone having to tick it.
+   - pageLayout: pockets across and down each binder page (see
+     pageLayout.ts). Changing it moves every binder's cards to match.
    To add a new setting:
      1. add it to the Settings type and DEFAULT_SETTINGS below
      2. read it in currentSettings (from this device) and fromFile (from
@@ -26,18 +28,23 @@
 
 import { currentThemeChoice, setThemeChoice, type ThemeChoice } from './theme';
 import { storageGet, storageRemove, storageSet } from './storage';
-import { isLocalMode } from './binderStorage';
+import { isLocalMode, relayoutAllBinders } from './binderStorage';
 import { isSignedIn, readSettingsFile, writeSettingsFile } from './googleDrive';
+import {
+  DEFAULT_LAYOUT, cleanLayout, pageLayout, pocketsPerPage, saveLayout, sameLayout, type PageLayout,
+} from './pageLayout';
 
 // Every setting, and what each one starts as. ("theme" is the choice:
 // dark, light, or "system" to follow the device's own setting.)
 export type Settings = {
   theme: ThemeChoice;
   hiddenFormats: string[];
+  pageLayout: PageLayout;
 };
 const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   hiddenFormats: [],
+  pageLayout: DEFAULT_LAYOUT,
 };
 
 // A label written into the settings file, so it's clear what it is, and
@@ -82,14 +89,19 @@ function cleanCodes(value: unknown): string[] {
 export function currentSettings(): Settings {
   let hidden: unknown = [];
   try { hidden = JSON.parse(storageGet(HIDDEN_FORMATS_KEY) ?? '[]'); } catch { /* unreadable: none hidden */ }
-  return { ...DEFAULT_SETTINGS, theme: currentThemeChoice(), hiddenFormats: cleanCodes(hidden) };
+  return { ...DEFAULT_SETTINGS, theme: currentThemeChoice(), hiddenFormats: cleanCodes(hidden), pageLayout: pageLayout() };
 }
 
 // Put settings into effect on this device, remember them here, and tell
-// the pages that use them
+// the pages that use them. A new page layout first moves every binder's
+// cards in this browser to match, then takes effect (binder pages redraw).
 function applySettings(settings: Settings): void {
   if (settings.theme !== currentThemeChoice()) setThemeChoice(settings.theme);
   storageSet(HIDDEN_FORMATS_KEY, JSON.stringify(settings.hiddenFormats));
+  if (!sameLayout(settings.pageLayout, pageLayout())) {
+    relayoutAllBinders(pocketsPerPage(), pocketsPerPage(settings.pageLayout));
+    saveLayout(settings.pageLayout);
+  }
   settingsChanged();
 }
 
@@ -103,6 +115,7 @@ function fromFile(data: Record<string, unknown>): Settings {
   const settings = currentSettings();
   if (data.theme === 'light' || data.theme === 'dark' || data.theme === 'system') settings.theme = data.theme;
   if (Array.isArray(data.hiddenFormats)) settings.hiddenFormats = cleanCodes(data.hiddenFormats);
+  if (data.pageLayout && typeof data.pageLayout === 'object') settings.pageLayout = cleanLayout(data.pageLayout);
   return settings;
 }
 

@@ -1,7 +1,7 @@
 /* =====================================================================
    THE SHELF OF BINDERS
    A closed binder for each binder (a link that opens it), with its card
-   count and a small download button under it, then the "+" binder for
+   count under it, then the "+" binder for
    making a new one. As many fit across as the window has room for.
 
    DRAGGING (with dnd-kit, a library that handles the mouse and touch):
@@ -18,7 +18,7 @@
    shelf (only one spot at a time is a Tab stop), then the arrow keys move
    from binder to binder, Home / End go to the first / the "+", Enter
    opens, Space picks a binder up (arrows choose its spot, Space drops,
-   Escape cancels), E edits, Delete deletes, D downloads, N makes a new one.
+   Escape cancels), E edits, Delete deletes, N makes a new one.
    ===================================================================== */
 
 import { useEffect, useImperativeHandle, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from 'react';
@@ -57,7 +57,6 @@ type Props = {
   onMove: (id: string, targetId: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onDownload: (id: string) => void;
   onNew: () => void;
   announce: (text: string) => void;
   ref?: Ref<ShelfHandle>;
@@ -85,7 +84,7 @@ const findDropSpot: CollisionDetection = (args) => {
 };
 
 export default function Shelf(props: Props) {
-  const { binders, counts, addDisabled, onMove, onEdit, onDelete, onDownload, onNew, announce, ref } = props;
+  const { binders, counts, addDisabled, onMove, onEdit, onDelete, onNew, announce, ref } = props;
 
   /* ----- Dragging ----- */
 
@@ -258,10 +257,6 @@ export default function Shelf(props: Props) {
       event.preventDefault();
       keyboardOpenedWindow.current = true;
       onDelete(id);
-    } else if (event.key === 'd' || event.key === 'D') {
-      event.preventDefault();
-      onDownload(id);
-      announce(`Downloading ${nameOf(id)}.`);
     }
   }
 
@@ -271,7 +266,7 @@ export default function Shelf(props: Props) {
     ? `Moving ${nameOf(carrying)}: ←↑↓→ choose a spot · Space or Enter drop · Esc cancel`
     : keyStop === ADD_STOP
       ? '←↑↓→ move · Enter new binder · Home / End first / last · ? all keys'
-      : '←↑↓→ move · Enter open · Space pick up · E edit · Del delete · D download · N new binder · ? all keys';
+      : '←↑↓→ move · Enter open · Space pick up · E edit · Del delete · N new binder · ? all keys';
 
   // Keep track of whether the keyboard is on a spot. ":focus-visible"
   // means it got there by keyboard (not a mouse click).
@@ -344,7 +339,6 @@ export default function Shelf(props: Props) {
             faded={carrying === binder.id}
             outlined={(carrying !== null && keyStop === binder.id && carrying !== binder.id) ||
               (dragId !== null && overId === binder.id && dragId !== binder.id)}
-            onDownload={() => onDownload(binder.id)}
             registerStop={(element) => {
               if (element) stopElements.current.set(binder.id, element);
               else stopElements.current.delete(binder.id);
@@ -407,13 +401,12 @@ export default function Shelf(props: Props) {
    ONE BINDER ON THE SHELF
    --------------------------------------------------------------------- */
 
-function ShelfBinder({ binder, count, tabStop, faded, outlined, onDownload, registerStop }: {
+function ShelfBinder({ binder, count, tabStop, faded, outlined, registerStop }: {
   binder: Binder;
   count: number;
   tabStop: boolean;
   faded: boolean;
   outlined: boolean;
-  onDownload: () => void;
   registerStop: (element: HTMLElement | null) => void;
 }) {
   // The binder can be dragged (by its link), and other binders can be
@@ -426,9 +419,7 @@ function ShelfBinder({ binder, count, tabStop, faded, outlined, onDownload, regi
   const label = `Open ${binder.name}, ${coverColorName(binder.cover)} cover${symbol ? `, ${symbol.name}` : ''}, ${cardCountText(count)}`;
 
   return (
-    // The binder and its small download button share one spot (a button
-    // can't go inside the binder's link, so they sit side by side, and the
-    // stylesheet places the button at the right end of the card count line).
+    // The binder's spot on the shelf (other binders can be dropped on it)
     <div ref={droppable.setNodeRef} className={styles.slot}>
       <Link
         ref={registerStop}
@@ -446,20 +437,6 @@ function ShelfBinder({ binder, count, tabStop, faded, outlined, onDownload, regi
         </span>
         <span className={styles.caption}>{cardCountText(count)}</span>
       </Link>
-      {/* The download button. tabIndex -1: keyboard users press D instead. */}
-      <button
-        className={styles.download}
-        type="button"
-        tabIndex={-1}
-        title={`Download ${binder.name} as .CSV`}
-        aria-label={`Download ${binder.name} as a .CSV file`}
-        onClick={onDownload}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"
-             strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
-        </svg>
-      </button>
     </div>
   );
 }

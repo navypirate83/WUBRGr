@@ -3,8 +3,8 @@
    Who's signed in (or "Saved on this device only"), then the shelf (see
    Shelf.tsx), and a message line under it.
    This file does the work behind the shelf: loading the binders from
-   Google Drive, and making, uploading, editing, moving, deleting and
-   downloading them. Each change shows on the shelf straight away, then
+   Google Drive, and making, uploading, editing, moving and deleting
+   them. (Downloading one is inside the binder: see BinderPage.tsx.) Each change shows on the shelf straight away, then
    is saved to Drive (when signed in).
    Only for someone signed in, or using the site locally: anyone else is
    sent to the welcome page to sign in.
@@ -22,11 +22,10 @@ import Shelf, { type ShelfHandle } from './Shelf';
 import { BinderPropertiesDialog, DeleteBinderDialog, type BinderChanges } from './BinderWindows';
 import {
   DEFAULT_COVER, DEFAULT_PAGES, OLD_SINGLE_BINDER_KEY,
-  binderCardCount, binderDetails, binderPages, cardCountText, cleanCards, cleanCover, cleanPageCount,
-  fitCardsIntoPages, forgetBinder, loadBinder, loadBinderList, manaColor, minPagesFor, saveBinder, saveBinderList,
+  binderCardCount, binderPages, cardCountText, cleanCards, cleanCover, cleanPageCount,
+  fitCardsIntoPages, forgetBinder, loadBinderList, manaColor, minPagesFor, saveBinder, saveBinderList,
   type Binder,
 } from '../../lib/binderStorage';
-import { binderToCsv } from '../../lib/binderCsv';
 import {
   DriveError, createBinderFile, getDriveUser, listBinderFiles, nameFromFileName, syncBinder,
   trashBinderFile, updateBinderDetails,
@@ -42,7 +41,6 @@ const shelfShortcuts: Shortcut[] = [
   { keys: <kbd>Space</kbd>, does: 'Pick up the binder. Then the arrows choose its spot, Space drops it, Esc cancels' },
   { keys: <kbd>E</kbd>, does: 'Binder properties (rename, pages, cover)' },
   { keys: <kbd>Delete</kbd>, does: 'Delete the binder (it asks first)' },
-  { keys: <kbd>D</kbd>, does: 'Download the binder as a .CSV file' },
   { keys: <kbd>N</kbd>, does: 'Make a new binder' },
   { keys: <kbd>?</kbd>, does: 'Show this list' },
 ];
@@ -273,32 +271,6 @@ export default function BindersPage() {
     }
   }
 
-  /* ----- Downloading a binder as a .CSV file ----- */
-
-  // Save one binder as a .csv file: its cards (one per line, with the
-  // page and pocket each is in) and its name, cover symbol, cover color
-  // and pages, the same as its Drive file (see lib/binderCsv.ts). When
-  // signed in, get its latest cards from Drive first (it may have been
-  // changed on another computer); if that isn't possible, use this
-  // browser's copy.
-  async function downloadBinder(id: string) {
-    if (!localMode) {
-      try { await syncBinder(id); } catch { /* use this browser's copy */ }
-    }
-    const details = binderDetails(id);
-    const file = new Blob([binderToCsv(details, loadBinder(id))], { type: 'text/csv' });
-    // The browser saves files from a link, so make an invisible link to
-    // the file's contents, "click" it, then clean up.
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(file);
-    // e.g. "Binder 1 2026-10-16.csv" (characters not allowed in file names removed)
-    link.download = `${details.name.replace(/[\\/:*?"<>|]/g, '')} ${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(link.href);   // free the memory the file was using
-  }
-
   /* ----- The ? key: the Keyboard shortcuts window ----- */
 
   useShortcutKeys((event) => {
@@ -339,7 +311,6 @@ export default function BindersPage() {
         onMove={moveBinder}
         onEdit={setEditingId}
         onDelete={setDeletingId}
-        onDownload={downloadBinder}
         onNew={() => setNewOpen(true)}
         announce={announce}
       />

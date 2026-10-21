@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import Modal from '../../components/Modal';
 import { NameField } from '../../components/binders/BinderChoices';
 import {
-  DEFAULT_COVER, DEFAULT_PAGES, NAME_LIMIT, POCKETS_PER_PAGE,
+  DEFAULT_COVER, DEFAULT_PAGES, NAME_LIMIT, pocketsPerPage,
   binderName, binderPages, cardCount, firstEmptyPocket, isLocalMode, loadBinder, loadBinderList,
   manaColor, nextBinderName, pocketKey, samePrinting, saveBinder, saveBinderList, withCount,
   type BinderCard,
@@ -47,7 +47,7 @@ export default function MoveCardDialog({ binderId, card, onMoved, onCancel }: Pr
   // The other binders, each with its card count (and whether it's full)
   const others = loadBinderList().filter((b) => b.id !== binderId).map((b) => {
     const count = Object.keys(loadBinder(b.id)).length;
-    return { ...b, count, full: count >= binderPages(b.id) * POCKETS_PER_PAGE };
+    return { ...b, count, full: count >= binderPages(b.id) * pocketsPerPage() };
   });
 
   // The counts come from this browser's copies, which can be out of date

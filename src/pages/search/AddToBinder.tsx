@@ -15,7 +15,7 @@ import { useEffect, useImperativeHandle, useRef, useState, type KeyboardEvent, t
 import { useNavigate } from 'react-router';
 import NewBinderDialog from '../../components/binders/NewBinderDialog';
 import {
-  DEFAULT_PAGES, POCKETS_PER_PAGE,
+  DEFAULT_PAGES, pocketsPerPage,
   binderPages, firstEmptyPocket, hasBinderCopy, isLocalMode, loadBinder, loadBinderList,
   pocketKey, saveBinder, saveBinderList, type BinderCard,
 } from '../../lib/binderStorage';
@@ -43,7 +43,7 @@ type Props = {
 export function pocketFromAddress(params: URLSearchParams): { page: number; slot: number } | null {
   const page = parseInt(params.get('binderPage') ?? '', 10);
   const slot = parseInt(params.get('binderSlot') ?? '', 10);
-  const valid = page >= 1 && slot >= 1 && slot <= POCKETS_PER_PAGE;
+  const valid = page >= 1 && slot >= 1 && slot <= pocketsPerPage();
   return valid ? { page, slot } : null;
 }
 
@@ -206,7 +206,7 @@ export default function AddToBinder({ cardEntry, fromBinder, pocket, onMessage, 
           <div className={styles.binderMenuList} role="group" aria-labelledby="binderMenuTitle">
             {binders.map((binder) => {
               const count = Object.keys(loadBinder(binder.id)).length;
-              const full = count >= binderPages(binder.id) * POCKETS_PER_PAGE;
+              const full = count >= binderPages(binder.id) * pocketsPerPage();
               const look = coverLook(binder.cover);
               return (
                 <button

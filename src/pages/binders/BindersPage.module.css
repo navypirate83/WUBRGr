@@ -79,8 +79,7 @@
    ONE SPOT ON THE SHELF
    ===================================================================== */
 
-/* The holder for one binder and its download button, so the button can
-   be placed against its edges */
+/* The holder for one binder on the shelf */
 .slot { position: relative; }
 
 /*
@@ -122,33 +121,6 @@
 }
 
 /*
-  The small download button: a round down arrow at the right edge, on
-  the same line as the card count. It's placed on top ("absolute") rather
-  than beside the count, so the count stays centered under the binder.
-  It's quiet (muted color) until the mouse is over it.
-*/
-.download {
-  position: absolute;
-  right: 0;
-  bottom: -3px;             /* centers it on the card count's line */
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  cursor: pointer;
-}
-.download svg { width: 14px; height: 14px; }
-.download:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-/*
   Hovering (or reaching with the Tab key): the binder lifts a little with
   a springy bounce and a bigger shadow, and the "+" turns bold.
   "(hover: hover)" limits the lift to devices with a mouse.
@@ -185,9 +157,8 @@
    DRAGGING (with the mouse, a finger or the keyboard)
    ===================================================================== */
 
-/* The binder being dragged OUT of its spot fades (its download button too) */
+/* The binder being dragged OUT of its spot fades */
 .dragSource { opacity: 0.3; }
-.slot:has(.dragSource) .download { opacity: 0.3; }
 
 /* The spot the binder would move INTO: a dashed accent-colored outline
    around that binder's cover (also on the keyboard's spot, overriding

@@ -15,6 +15,10 @@
      - Binder, Cover symbol, Cover color, Pages: the binder's own name,
        cover and number of pages, repeated on every line so sorting the
        rows in a spreadsheet can't lose them
+     - Page layout: the pockets across x down the Page and Pocket numbers
+       were counted in (like "4x4"). A file read with a different layout
+       in use has its cards moved to match, in the same order. A file
+       without it counts as 4x4 (the only layout before there was a choice).
    Columns WUBRG'r doesn't use itself (like Condition or Purchase price)
    are kept with each card, so a ManaBox file can go in and come back
    out without losing anything.
@@ -24,10 +28,11 @@
 import { CARD_BACK } from './cards';
 import { loadPrintings } from './scryfall';
 import {
-  DEFAULT_PAGES, MAX_COPIES, POCKETS_PER_PAGE, cleanCover, cleanPageCount,
+  DEFAULT_PAGES, MAX_COPIES, cleanCover, cleanPageCount,
   freeBinderName, manaColor, minPagesFor, nextBinderName, pocketKey,
   type Binder, type BinderCard, type BinderCards,
 } from './binderStorage';
+import { DEFAULT_LAYOUT, layoutFromText, layoutToText, pageLayout, pocketsPerPage } from './pageLayout';
 
 /* ---------------------------------------------------------------------
    THE COLUMNS
@@ -38,7 +43,7 @@ export const CSV_COLUMNS = [
   'Name', 'Set code', 'Set name', 'Collector number', 'Foil', 'Rarity', 'Quantity',
   'Scryfall ID', 'Purchase price', 'Condition', 'Language', 'Proxy',
   'Purchase price currency', 'Added',
-  'Page', 'Pocket', 'Side', 'Binder', 'Cover symbol', 'Cover color', 'Pages',
+  'Page', 'Pocket', 'Side', 'Binder', 'Cover symbol', 'Cover color', 'Pages', 'Page layout',
 ];
 
 // The ManaBox columns WUBRG'r doesn't use itself. Their values are kept
@@ -101,6 +106,7 @@ export function binderToCsv(binder: Omit<Binder, 'id'>, cards: BinderCards): str
   // The pockets in order: "2-10" comes after "2-9" ("numeric" sorting)
   const keys = Object.keys(cards).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   const lines = [CSV_COLUMNS.join(',')];
+  const layout = layoutToText(pageLayout());   // the layout the pockets are counted in
   for (const key of keys) {
     const card = cards[key];
     const [page, pocket] = key.split('-');
@@ -123,6 +129,7 @@ export function binderToCsv(binder: Omit<Binder, 'id'>, cards: BinderCards): str
       'Cover symbol': binder.color ?? '',
       'Cover color': binder.cover,
       'Pages': String(binder.pages),
+      'Page layout': layout,
     };
     // The columns kept from an uploaded file (or their usual values)
     for (const [column, usual] of Object.entries(KEPT_COLUMNS)) values[column] = extra[column] ?? usual;
@@ -205,17 +212,27 @@ function readCsv(text: string): {
   const cards: CsvCard[] = [];
   let skipped = 0;
   const binder: { name?: string; color?: string | null; cover?: string; pages?: number } = {};
+  // The pockets per page now, and in the file (its Page layout column,
+  // from the first line that has one; 4x4 if it doesn't say)
+  const nowPerPage = pocketsPerPage();
+  const firstLayout = lines.map((line) => (position['Page layout'] >= 0 ? line[position['Page layout']] ?? '' : ''))
+    .map(layoutFromText).find((layout) => layout !== null);
+  const filePerPage = pocketsPerPage(firstLayout ?? DEFAULT_LAYOUT);
   for (const line of lines) {
     // This line's value in a column ('' if it's missing)
     const get = (column: string) => (position[column] >= 0 ? (line[position[column]] ?? '').trim() : '');
 
-    // The binder's own details, from the first line that has them
+    // The binder's own details, from the first line that has them. Its
+    // pages were counted in the file's layout: change that to the number
+    // of pages that holds as many pockets with the layout now.
     if (binder.name === undefined && get('Binder')) binder.name = get('Binder');
     if (binder.color === undefined && get('Cover color')) {
       binder.color = manaColor(get('Cover symbol')) ? get('Cover symbol') : null;
       binder.cover = cleanCover(get('Cover color'));
     }
-    if (binder.pages === undefined && get('Pages')) binder.pages = cleanPageCount(get('Pages'));
+    if (binder.pages === undefined && get('Pages')) {
+      binder.pages = Math.max(1, Math.ceil(cleanPageCount(get('Pages')) * filePerPage / nowPerPage));
+    }
 
     const name = get('Name');
     const set = get('Set code').toLowerCase();
@@ -258,12 +275,21 @@ function readCsv(text: string): {
     if (get('Added')) card.added = get('Added');
     if (Object.keys(extra).length) card.extra = extra;
 
-    cards.push({
-      card,
-      page: Math.round(Number(get('Page'))) || 0,
-      pocket: Math.round(Number(get('Pocket'))) || 0,
-      needsLookup: !validId,
-    });
+    // Its pocket, counted in the file's layout, moved to the layout now
+    // (keeping its place in the order: see relayoutCards in
+    // binderStorage.ts). No pocket, or one that can't exist: 0, so it
+    // goes in the first empty pocket instead.
+    let page = Math.round(Number(get('Page'))) || 0;
+    let pocket = Math.round(Number(get('Pocket'))) || 0;
+    if (page >= 1 && pocket >= 1 && pocket <= filePerPage) {
+      const place = (page - 1) * filePerPage + (pocket - 1);
+      page = Math.floor(place / nowPerPage) + 1;
+      pocket = (place % nowPerPage) + 1;
+    } else {
+      page = 0;
+      pocket = 0;
+    }
+    cards.push({ card, page, pocket, needsLookup: !validId });
   }
   return { cards, skipped, binder };
 }
@@ -274,11 +300,12 @@ function readCsv(text: string): {
 // pages the binder should have at least; pages are added until every
 // card fits, so no card is ever left out.
 function placeCards(read: CsvCard[], pages: number): { cards: BinderCards; pages: number } {
+  const perPage = pocketsPerPage();
   const cards: BinderCards = {};
   const leftOver: BinderCard[] = [];
   for (const { card, page, pocket } of read) {
     const key = pocketKey(page, pocket);
-    if (page >= 1 && pocket >= 1 && pocket <= POCKETS_PER_PAGE && !cards[key]) cards[key] = card;
+    if (page >= 1 && pocket >= 1 && pocket <= perPage && !cards[key]) cards[key] = card;
     else leftOver.push(card);
   }
   // Enough pages for the file's page count, every card, and the highest
@@ -294,7 +321,7 @@ function placeCards(read: CsvCard[], pages: number): { cards: BinderCards; pages
   for (const card of leftOver) {
     do {
       pocket++;
-      if (pocket > POCKETS_PER_PAGE) { page++; pocket = 1; }
+      if (pocket > perPage) { page++; pocket = 1; }
     } while (cards[pocketKey(page, pocket)]);
     cards[pocketKey(page, pocket)] = card;
     pages = Math.max(pages, page);   // past the last page: that adds a page
